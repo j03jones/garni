@@ -134,3 +134,11 @@ protection**, which rejects passwords known from data breaches. That is a dashbo
 a JSON document per person holding their meal plan and shopping list. Only its owner can read or write
 it (the existing `user_data_own` rule). Until it is run, the app keeps plans and lists on the device and
 shows "the database needs supabase/add_planner.sql" under the plan when signed in.
+
+## Deleting your own account
+`add_delete_own_account.sql` (run after `tighten_function_access.sql`, safe to run again) adds
+`delete_my_account()`, behind Settings > Account > *Delete my account*. The App Store and Google Play
+require apps with sign-up to offer this. The app deletes the person's photos from Storage first, then the
+function deletes their recipes (Community ones too) and their account, which takes their profile, stars,
+notes, meal plan and shopping list with it. The admin account can't delete itself, and the only owner of a
+restaurant has to make someone else an owner first. New projects get this from `schema.sql`.

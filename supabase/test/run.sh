@@ -8,7 +8,7 @@ DIR="$(mktemp -d)"; PORT=54329
 run() { if [ "$(id -u)" = 0 ]; then chown -R postgres "$DIR"; su postgres -c "$*"; else bash -c "$*"; fi; }
 trap 'run "$BIN/pg_ctl -D $DIR/data stop -m immediate >/dev/null 2>&1 || true"; rm -rf "$DIR"' EXIT
 chmod 755 "$DIR"; [ "$(id -u)" = 0 ] && chown postgres "$DIR"
-run "$BIN/initdb -D $DIR/data -A trust >/dev/null"
+run "$BIN/initdb -D $DIR/data -A trust -U postgres >/dev/null"
 run "$BIN/pg_ctl -D $DIR/data -o '-p $PORT -k $DIR' -l $DIR/log -w start >/dev/null"
 P="$BIN/psql -h $DIR -p $PORT -U postgres -v ON_ERROR_STOP=1 -X -q"
 SCHEMA="$(mktemp)"; sed "s/CHANGE-ME@example.com/admin@x.test/" "$HERE/../schema.sql" > "$SCHEMA"; chmod 644 "$SCHEMA"
