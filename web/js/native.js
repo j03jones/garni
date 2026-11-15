@@ -57,7 +57,7 @@ export function syncStatusBar() {
   const paint = () => {
     const dark = mq.matches;
     call('StatusBar', 'setStyle', { style: dark ? 'DARK' : 'LIGHT' });
-    call('StatusBar', 'setBackgroundColor', { color: dark ? '#15251c' : '#dff3e6' });   // the page-header wash
+    call('StatusBar', 'setBackgroundColor', { color: dark ? '#23251A' : '#E9E5CC' });   // the page-header wash
   };
   paint();
   mq.addEventListener?.('change', paint);

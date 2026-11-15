@@ -243,7 +243,7 @@ async def run():
         # ---- website look and the new kitchen features
         await page.goto(URL + "#/")
         await page.wait_for_selector(".band.hero .eyebrow")
-        check("home page header has the bouquet garni", await page.locator(".band.hero svg.flourish .twine").count() == 2)
+        check("home page header has the bouquet garni", await page.locator(".band.hero svg.flourish .tie").count() == 3)
         check("signed-out visitors do not see the source chips", not await page.locator(".chips.src").is_visible())
 
         # ---- long methods become numbered steps, each with the amounts it uses
@@ -351,7 +351,7 @@ async def run():
         first = await page.eval_on_selector(".rows .rc .t", "e => e.textContent")
         check("titles with quotes don't jump to the top of the list", not first.startswith('"'), first)
         bg = await page.evaluate("getComputedStyle(document.querySelector('.band.hero')).backgroundColor")
-        check("header uses the leaf wash", bg == "rgb(223, 243, 230)", bg)
+        check("header uses the cream-and-sage wash", bg == "rgb(233, 229, 204)", bg)
 
         await page.click("a[data-tab=new]")
         await page.wait_for_selector("input[aria-label=Title]")

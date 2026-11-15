@@ -43,10 +43,14 @@ always shows the new version.
 
 ## Look and feel
 
-"Fresh market": warm off-white paper, one leaf green, a tangerine highlight, big rounded cards with soft
-shadows, a floating tab bar, Outfit headings over DM Sans text, and a little bouquet garni in the corner of
-each page header (the stems draw in, the herbs open, then the twine ties itself into a g). Light and dark follow the device. The colours are the variables at the top of
-`web/style.css`; the bouquet garni drawing is in `web/icons/icon.svg` and `web/js/ui.js`.
+Concept 1, "Culinary Heritage": a minimalist bouquet garni (thyme, flat-leaf parsley and bay tied in terracotta
+twine) on warm cream (#F6EDD9), deep herb green (#5A6B47) and soft sage (#8FA37D) accents, terracotta (#C86D44)
+for the main buttons and the twine, olive charcoal (#3B3A2E) text, Outfit headings over DM Sans. Dark mode is an
+olive-charcoal evening version. The brand tokens (`--garni-*`) and the app's colours are at the top of
+`web/style.css`; light-mode buttons use the deeper terracotta (#B25B34) so white text on them is easy to read.
+The icon is `web/icons/icon.svg` (with the wordmark; home-screen icons are the bundle alone, since phones print
+the name under them) and the nav-bar mark is `web/icons/mark.svg`; the page headers draw the same bundle
+(`web/js/ui.js`).
 
     python3 tools/make_icons.py   # redraw every icon and splash screen (web, Android, iOS) from icon.svg
 

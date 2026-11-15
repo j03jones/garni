@@ -144,25 +144,11 @@ export async function copyText(text) {
 
 // ------------------------------------------------------------------ header art, motion, feedback
 
-/** The bouquet garni in the corner of a page header (the app icon's drawing): the stems draw in, the
- *  thyme, bay and parsley open, then the twine ties itself round the stems into a lowercase g. */
+/** The bouquet garni in the corner of a page header (the Concept 1 mark): the stems draw in, the thyme,
+ *  parsley and bay open, then the terracotta twine wraps the bundle. */
 export function bouquetArt() {
-  const leaf = 'M0 0C-14-6-22-20-14-32C-19-44-7-52 0-45C7-52 19-44 14-32C22-20 14-6 0 0Z';
-  const thyme = [[152, 142, 12, 7, -40], [173, 152, 11, 6.5, 20], [162, 170, 11, 6.5, -70], [193, 181, 11, 6.5, 25],
-    [182, 199, 11, 6.5, -70], [209, 213, 10, 6, 30], [198, 231, 10, 6, -75]]
-    .map(([x, y, rx, ry, r], i) => `<g transform="rotate(${r} ${x} ${y})"><ellipse class="lf" style="--i:${6 - i}" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/></g>`).join('');
-  const parsley = [[-10, 1.25, 8], [-62, 1.05, 7], [42, 1.05, 9]]
-    .map(([r, s, i]) => `<g transform="translate(352 180) rotate(${r}) scale(${s})"><path class="lf base" style="--i:${i}" d="${leaf}"/></g>`).join('');
   const wrap = document.createElement('span');
-  wrap.innerHTML = `<svg class="flourish" viewBox="128 66 336 400" aria-hidden="true" focusable="false">
-  <path class="twine back" d="M210 330A46 24 0 0 1 302 330"/>
-  <path class="stem" d="M236 376C240 352 238 332 236 304C222 244 198 192 152 142"/>
-  <path class="stem" d="M256 380L256 304"/>
-  <path class="stem" d="M274 376C272 352 274 332 276 304C292 252 318 212 352 180"/>
-  ${thyme}${parsley}
-  <path class="lf base" style="--i:4" d="M256 306C212 250 212 148 262 80C306 148 302 250 256 306Z"/>
-  <path class="twine" d="M210 330A46 24 0 0 0 302 330L302 404C302 446 268 458 238 452C214 447 202 434 200 420"/>
-</svg>`;
+  wrap.innerHTML = `<svg class="flourish" viewBox="110 70 310 350" aria-hidden="true" focusable="false"><path d="M262 320 C275 230, 310 145, 360 115 C375 170, 345 255, 275 325 Z" fill="#5A6B47" class="lf" style="--i:1"/><path d="M266 330 C295 255, 345 190, 405 168 C400 235, 355 295, 276 338 Z" fill="#829470" class="lf" style="--i:2"/><path class="vein" d="M268 334 Q335 245 388 180" stroke="#F6EDD9" stroke-width="4" stroke-linecap="round" fill="none"/><path class="stem" d="M242 385 C232 310, 195 225, 142 150" stroke="#7A8F68" stroke-width="6" stroke-linecap="round" fill="none"/><ellipse cx="142" cy="150" rx="14" ry="8" transform="rotate(-35 142 150)" fill="#8FA37D" class="lf" style="--i:3"/><ellipse cx="168" cy="172" rx="15" ry="8" transform="rotate(-15 168 172)" fill="#8FA37D" class="lf" style="--i:4"/><ellipse cx="152" cy="192" rx="15" ry="8" transform="rotate(25 152 192)" fill="#8FA37D" class="lf" style="--i:5"/><ellipse cx="190" cy="205" rx="15" ry="8" transform="rotate(-20 190 205)" fill="#8FA37D" class="lf" style="--i:6"/><ellipse cx="172" cy="226" rx="15" ry="8" transform="rotate(25 172 226)" fill="#8FA37D" class="lf" style="--i:7"/><path class="stem" d="M252 395 C246 300, 224 195, 195 105" stroke="#6E825C" stroke-width="6" stroke-linecap="round" fill="none"/><ellipse cx="195" cy="105" rx="14" ry="8" transform="rotate(-55 195 105)" fill="#8FA37D" class="lf" style="--i:8"/><ellipse cx="214" cy="132" rx="15" ry="8" transform="rotate(-30 214 132)" fill="#8FA37D" class="lf" style="--i:0"/><ellipse cx="190" cy="142" rx="15" ry="8" transform="rotate(20 190 142)" fill="#8FA37D" class="lf" style="--i:1"/><ellipse cx="226" cy="175" rx="15" ry="8" transform="rotate(-30 226 175)" fill="#8FA37D" class="lf" style="--i:2"/><path class="stem" d="M256 402 C256 310, 266 210, 282 135" stroke="#5A6B47" stroke-width="7" stroke-linecap="round" fill="none"/><path class="stem" d="M262 240 L232 195" stroke="#5A6B47" stroke-width="5" stroke-linecap="round" fill="none"/><path class="stem" d="M267 220 L308 182" stroke="#5A6B47" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M282 142 L252 115 L262 108 L268 92 L280 104 L290 85 L300 104 L314 94 L316 112 L328 118 L282 142 Z" fill="#5A6B47" class="lf" style="--i:3"/><path d="M234 198 L206 184 L214 174 L214 158 L228 168 L234 152 L244 168 L256 162 L254 180 L234 198 Z" fill="#5A6B47" class="lf" style="--i:4"/><path d="M305 186 L292 162 L304 158 L310 144 L320 156 L334 148 L332 166 L346 172 L328 186 L305 186 Z" fill="#8FA37D" class="lf" style="--i:5"/><path class="stem" d="M250 325 L234 392" stroke="#5A6B47" stroke-width="8" stroke-linecap="round"/><path class="stem" d="M258 325 L256 404" stroke="#5A6B47" stroke-width="9" stroke-linecap="round"/><path class="stem" d="M266 325 L278 394" stroke="#829470" stroke-width="8" stroke-linecap="round"/><rect class="tie" x="228" y="316" width="60" height="11" rx="5.5" fill="#C86D44"/><rect class="tie" x="225" y="329" width="64" height="11" rx="5.5" transform="rotate(-3 257 334)" fill="#C86D44"/><rect class="tie" x="228" y="342" width="60" height="11" rx="5.5" fill="#C86D44"/><path class="twine" d="M282 346 L300 364" stroke="#C86D44" stroke-width="8" stroke-linecap="round"/></svg>`;
   return wrap.firstElementChild;
 }
 
@@ -185,7 +171,7 @@ export function confetti(from) {
   const r = from?.getBoundingClientRect?.();
   const x = r ? r.left + r.width / 2 : innerWidth / 2;
   const y = r ? r.top + r.height / 2 : innerHeight * 0.45;
-  const colors = ['#22B566', '#FF7A3D', '#FFB224', '#FF6B8B', '#4D9DFF', '#0F8A4C'];
+  const colors = ['#C86D44', '#8FA37D', '#5A6B47', '#D9A441', '#B25B34', '#E5DEC9'];
   for (let i = 0; i < 36; i++) {
     const p = document.createElement('i');
     const a = Math.random() * Math.PI * 2;

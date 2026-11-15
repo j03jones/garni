@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="110 70 310 350">
+  <!-- the herb bundle on its own (no background, no wordmark): the nav bar mark -->
+  <path d="M262 320 C275 230, 310 145, 360 115 C375 170, 345 255, 275 325 Z" fill="#5A6B47"/>
+  <path d="M266 330 C295 255, 345 190, 405 168 C400 235, 355 295, 276 338 Z" fill="#829470"/>
+  <path d="M268 334 Q335 245 388 180" stroke="#F6EDD9" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M242 385 C232 310, 195 225, 142 150" stroke="#7A8F68" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <ellipse cx="142" cy="150" rx="14" ry="8" transform="rotate(-35 142 150)" fill="#8FA37D"/>
+  <ellipse cx="168" cy="172" rx="15" ry="8" transform="rotate(-15 168 172)" fill="#8FA37D"/>
+  <ellipse cx="152" cy="192" rx="15" ry="8" transform="rotate(25 152 192)" fill="#8FA37D"/>
+  <ellipse cx="190" cy="205" rx="15" ry="8" transform="rotate(-20 190 205)" fill="#8FA37D"/>
+  <ellipse cx="172" cy="226" rx="15" ry="8" transform="rotate(25 172 226)" fill="#8FA37D"/>
+  <path d="M252 395 C246 300, 224 195, 195 105" stroke="#6E825C" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <ellipse cx="195" cy="105" rx="14" ry="8" transform="rotate(-55 195 105)" fill="#8FA37D"/>
+  <ellipse cx="214" cy="132" rx="15" ry="8" transform="rotate(-30 214 132)" fill="#8FA37D"/>
+  <ellipse cx="190" cy="142" rx="15" ry="8" transform="rotate(20 190 142)" fill="#8FA37D"/>
+  <ellipse cx="226" cy="175" rx="15" ry="8" transform="rotate(-30 226 175)" fill="#8FA37D"/>
+  <path d="M256 402 C256 310, 266 210, 282 135" stroke="#5A6B47" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M262 240 L232 195" stroke="#5A6B47" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M267 220 L308 182" stroke="#5A6B47" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M282 142 L252 115 L262 108 L268 92 L280 104 L290 85 L300 104 L314 94 L316 112 L328 118 L282 142 Z" fill="#5A6B47"/>
+  <path d="M234 198 L206 184 L214 174 L214 158 L228 168 L234 152 L244 168 L256 162 L254 180 L234 198 Z" fill="#5A6B47"/>
+  <path d="M305 186 L292 162 L304 158 L310 144 L320 156 L334 148 L332 166 L346 172 L328 186 L305 186 Z" fill="#8FA37D"/>
+  <path d="M250 325 L234 392" stroke="#5A6B47" stroke-width="8" stroke-linecap="round"/>
+  <path d="M258 325 L256 404" stroke="#5A6B47" stroke-width="9" stroke-linecap="round"/>
+  <path d="M266 325 L278 394" stroke="#829470" stroke-width="8" stroke-linecap="round"/>
+  <rect x="228" y="316" width="60" height="11" rx="5.5" fill="#C86D44"/>
+  <rect x="225" y="329" width="64" height="11" rx="5.5" transform="rotate(-3 257 334)" fill="#C86D44"/>
+  <rect x="228" y="342" width="60" height="11" rx="5.5" fill="#C86D44"/>
+  <path d="M282 346 L300 364" stroke="#C86D44" stroke-width="8" stroke-linecap="round"/>
+</svg>

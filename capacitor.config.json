@@ -2,11 +2,22 @@
   "appId": "page.garni",
   "appName": "Garni",
   "webDir": "web",
-  "backgroundColor": "#faf8f3",
-  "android": { "allowMixedContent": false },
-  "ios": { "contentInset": "never" },
+  "backgroundColor": "#F6EDD9",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  },
   "plugins": {
-    "StatusBar": { "overlaysWebView": false, "style": "LIGHT", "backgroundColor": "#dff3e6" },
-    "LocalNotifications": { "smallIcon": "ic_stat_garni", "iconColor": "#12994F" }
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT",
+      "backgroundColor": "#E9E5CC"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_garni",
+      "iconColor": "#5A6B47"
+    }
   }
 }

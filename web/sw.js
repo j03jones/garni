@@ -8,7 +8,7 @@ const ASSETS = [
   'js/app.js', 'js/units.js', 'js/unitdata.js', 'js/groups.js', 'js/linkdata.js', 'js/webimport.js', 'js/qr.js', 'js/model.js', 'js/store.js', 'js/ui.js', 'js/timers.js', 'js/config.js', 'js/cloud.js', 'js/account.js', 'js/photos.js', 'js/sharelink.js', 'js/applink.js', 'js/native.js', 'js/insights.js', 'js/home.js', 'js/steps.js', 'js/motion.js', 'js/covers.js', 'js/getin.js', 'js/search.js', 'js/planning.js', 'js/nutrition.js', 'js/nutridata.js', 'js/prices.js', 'js/costui.js', 'js/transfer.js', 'js/transferui.js', 'js/shopping.js', 'js/aisledata.js', 'js/planner.js', 'js/pantry.js', 'js/collections.js', 'js/cooklog.js',
   'data/recipes.json',
   'fonts/fonts.css', 'fonts/dmsans-latin.woff2', 'fonts/dmsans-latin-ext.woff2', 'fonts/outfit-latin.woff2', 'fonts/outfit-latin-ext.woff2',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon.svg', 'icons/mark.svg', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 

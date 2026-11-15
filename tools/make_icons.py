@@ -14,11 +14,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SVG = (ROOT / "web/icons/icon.svg").read_text()
 ART = re.search(r"(<g transform.*</g>)", SVG, re.S).group(1)       # the drawing without its background
-GREEN = "#12994f"
+CREAM = "#F6EDD9"      # Concept 1 warm cream: icon background, adaptive-icon layer, splash
+SURFACE = "#FBF7EE"    # soft parchment: the splash tile
+import base64
+OUTFIT = base64.b64encode((ROOT / "web/fonts/outfit-latin.woff2").read_bytes()).decode()   # the wordmark's font
 
 
 def page(size: int, body: str, background: str = "transparent") -> str:
-    return (f"<style>html,body{{margin:0;background:{background}}}"
+    return (f"<style>@font-face{{font-family:'Outfit';font-weight:500 700;src:url(data:font/woff2;base64,{OUTFIT}) format('woff2')}}"
+            f"html,body{{margin:0;background:{background}}}"
             f"svg{{display:block;width:{size}px;height:{size}px}}</style>{body}")
 
 
@@ -28,25 +32,42 @@ def boxed(inner: str, scale: float = 1.0) -> str:
             f'<g transform="translate(256 256) scale({scale}) translate(-256 -256)">{inner}</g></svg>')
 
 
+def centred(scale: float) -> str:
+    """The herb bundle alone, centred in the 512 box (its own centre is about 269,245), scaled about the middle."""
+    return boxed(f'<g transform="translate(-13 11)">{ART}</g>', scale)
+
+
+def launcher(scale: float = 1.15) -> str:
+    """Home-screen icon: the bundle on cream, no wordmark (phones print the name under the icon)."""
+    inner = centred(scale).split('>', 1)[1].rsplit('</svg>', 1)[0]
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="{CREAM}"/>'
+            f'{inner}</svg>')
+
+
 def white() -> str:
     """The drawing in solid white."""
     return re.sub(r'(fill|stroke)="#(?!fff")[0-9a-fA-F]{3,6}"', r'\1="#fff"', ART)
 
 
 def grey() -> str:
-    """The drawing in greys, for iOS's tinted icon (the twine a shade darker so the g still reads)."""
-    out = re.sub(r'(fill|stroke)="#(?:ffb38a|e8946a)"', r'\1="#b8b8b8"', ART)
-    return re.sub(r'(fill|stroke)="#18a058"', r'\1="#9a9a9a"', out)
+    """The drawing in light greys, for iOS's tinted icon (iOS tints it; lighter parts come out brighter)."""
+    def g(m):
+        h = m.group(2)
+        r, gg, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        v = round(110 + 145 * (0.2126 * r + 0.7152 * gg + 0.0722 * b) / 255)
+        return f'{m.group(1)}="#{v:02x}{v:02x}{v:02x}"'
+    return re.sub(r'(fill|stroke)="#([0-9a-fA-F]{6})"', g, ART)
 
 
 def silhouette() -> str:
     """The drawing in solid white, filling the box, for Android's notification icon."""
-    return boxed(white(), 1.16)
+    return boxed(f'<g transform="translate(-13 11)">{white()}</g>', 1.25)
 
 
 def splash(background: str) -> str:
-    tile = (f'<g transform="translate(1166 1166)"><rect width="400" height="400" rx="96" fill="{GREEN}"/>'
-            f'<g transform="scale(.78125)">{ART}</g></g>')
+    inner = centred(1.05).split('>', 1)[1].rsplit('</svg>', 1)[0]
+    tile = (f'<g transform="translate(1166 1166)"><rect width="400" height="400" rx="96" fill="{SURFACE}"/>'
+            f'<g transform="scale(.78125)">{inner}</g></g>')
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">'
             f'<rect width="2732" height="2732" fill="{background}"/>{tile}</svg>')
 
@@ -57,21 +78,22 @@ async def main() -> None:
     web, res = ROOT / "web/icons", ROOT / "resources"
     res.mkdir(exist_ok=True)
     jobs = [
-        (web / "icon-192.png", 192, SVG, "transparent"),
-        (web / "icon-512.png", 512, SVG, "transparent"),
-        (web / "icon-maskable-512.png", 512, SVG, "transparent"),
-        (web / "apple-touch-icon.png", 180, SVG, "transparent"),
-        (res / "icon-only.png", 1024, SVG, "transparent"),
-        (res / "icon-foreground.png", 1024, boxed(ART, 0.72), "transparent"),
-        (res / "icon-background.png", 1024, boxed(f'<rect width="512" height="512" fill="{GREEN}"/>'), "transparent"),
+        (web / "icon-192.png", 192, launcher(), "transparent"),
+        (web / "icon-512.png", 512, launcher(), "transparent"),
+        (web / "icon-maskable-512.png", 512, launcher(0.92), "transparent"),     # Android's circle crop keeps the middle 80%
+        (web / "apple-touch-icon.png", 180, launcher(), "transparent"),
+        (web / "icon-wordmark-512.png", 512, SVG, "transparent"),                # the full icon.svg, wordmark and all
+        (res / "icon-only.png", 1024, launcher(), "transparent"),
+        (res / "icon-foreground.png", 1024, centred(0.9), "transparent"),
+        (res / "icon-background.png", 1024, boxed(f'<rect width="512" height="512" fill="{CREAM}"/>'), "transparent"),
         (res / "notification.png", 384, silhouette(), "transparent"),
         # iOS 18's dark and tinted home-screen icons: the drawing with no background (iOS adds its own)
-        (res / "icon-dark.png", 1024, boxed(ART, 0.9), "transparent"),
-        (res / "icon-tinted.png", 1024, boxed(grey(), 0.9), "transparent"),
+        (res / "icon-dark.png", 1024, centred(1.1), "transparent"),
+        (res / "icon-tinted.png", 1024, boxed(f'<g transform="translate(-13 11)">{grey()}</g>', 1.1), "transparent"),
         # Android 13's themed icon: a one-colour layer the phone tints to match the wallpaper
-        (res / "icon-monochrome.png", 1024, boxed(white(), 0.62), "transparent"),
-        (res / "splash.png", 2732, splash("#dff3e6"), "transparent"),
-        (res / "splash-dark.png", 2732, splash("#15251c"), "transparent"),
+        (res / "icon-monochrome.png", 1024, boxed(f'<g transform="translate(-13 11)">{white()}</g>', 0.82), "transparent"),
+        (res / "splash.png", 2732, splash(CREAM), "transparent"),
+        (res / "splash-dark.png", 2732, splash("#1C1B15"), "transparent"),
     ]
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -123,7 +145,7 @@ def native() -> None:
             fpx = px * 108 // 48
             fore.resize((fpx, fpx), Image.LANCZOS).save(d / "ic_launcher_foreground.png")
         (android / "values/ic_launcher_background.xml").write_text(
-            f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">{GREEN.upper()}</color>\n</resources>\n')
+            f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">{CREAM.upper()}</color>\n</resources>\n')
         mono = Image.open(res / "icon-monochrome.png").convert("RGBA")
         for name, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
             fpx = px * 108 // 48
