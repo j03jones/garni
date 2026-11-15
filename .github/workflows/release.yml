@@ -1,0 +1,54 @@
+name: Store release (Android)
+
+# Builds the signed Android App Bundle (.aab) to upload to Google Play. Run it by hand:
+# Actions > Store release (Android) > Run workflow, with a version code higher than the last upload.
+# Needs these repository secrets (Settings > Secrets and variables > Actions), made once with
+# the steps in docs/store/README.md:
+#   GARNI_UPLOAD_KEYSTORE_BASE64  the upload keystore file, base64-encoded
+#   GARNI_KEYSTORE_PASSWORD, GARNI_KEY_ALIAS, GARNI_KEY_PASSWORD
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Version code (a whole number, one more than the last upload)"
+        required: true
+      version_name:
+        description: "Version shown in the store, e.g. 1.0.1"
+        required: true
+        default: "1.0"
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx cap sync android
+      - name: Unpack the upload key
+        env:
+          KEYSTORE_B64: ${{ secrets.GARNI_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_B64" || { echo "The GARNI_UPLOAD_KEYSTORE_BASE64 secret is missing (docs/store/README.md)"; exit 1; }
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+      - name: Build the signed bundle
+        working-directory: android
+        env:
+          GARNI_KEYSTORE: ${{ runner.temp }}/upload.jks
+          GARNI_KEYSTORE_PASSWORD: ${{ secrets.GARNI_KEYSTORE_PASSWORD }}
+          GARNI_KEY_ALIAS: ${{ secrets.GARNI_KEY_ALIAS }}
+          GARNI_KEY_PASSWORD: ${{ secrets.GARNI_KEY_PASSWORD }}
+          GARNI_VERSION_CODE: ${{ inputs.version_code }}
+        run: ./gradlew bundleRelease --no-daemon -PversionName="${{ inputs.version_name }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Garni-android-release-${{ inputs.version_code }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error

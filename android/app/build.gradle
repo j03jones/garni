@@ -1,23 +1,36 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "page.garni"
-    compileSdk rootProject.ext.compileSdkVersion
+    namespace = "page.garni"
+    compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "page.garni"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode((System.getenv("GARNI_VERSION_CODE") ?: "1").toInteger())
+        versionName(project.findProperty("versionName") ?: "1.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
-            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // Store builds are signed with the upload key. CI passes it in through environment variables
+    // (see .github/workflows/release.yml); without them, release builds are simply unsigned.
+    signingConfigs {
+        release {
+            if (System.getenv('GARNI_KEYSTORE')) {
+                storeFile file(System.getenv('GARNI_KEYSTORE'))
+                storePassword System.getenv('GARNI_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('GARNI_KEY_ALIAS')
+                keyPassword System.getenv('GARNI_KEY_PASSWORD')
+            }
         }
     }
     buildTypes {
         release {
+            if (System.getenv('GARNI_KEYSTORE')) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
