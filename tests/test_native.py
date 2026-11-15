@@ -17,7 +17,7 @@ globalThis.location = { hash: '#/r/abc' };
 const fake = (headers) => ({
   isNativePlatform: () => true,
   PluginHeaders: headers.map((name) => ({ name, methods: [] })),
-  nativePromise: (p, m, o) => { calls.push([p, m, o]); return Promise.resolve(m === 'checkPermissions' ? { display: 'prompt' } : {}); },
+  nativePromise: (p, m, o) => { calls.push([p, m, o]); return Promise.resolve(m === 'checkPermissions' ? { display: 'prompt' } : p === 'GarniShare' ? { value: '{"title":"Pie","text":"https://x.example/pie"}' } : {}); },
   addListener: (p, e, f) => { listeners[`${p}.${e}`] = f; },
 });
 const out = {};
@@ -27,10 +27,11 @@ const web = await import('./web/js/native.js?web');
 out.webHaptic = web.haptic('light');
 out.webAlert = await web.scheduleAlert('t1', 0, 'x', 'y');
 out.webCanShare = web.canShare();
+out.webTaken = await web.takeShared();
 out.webCalls = calls.length;
 
 // in the phone app
-globalThis.Capacitor = fake(['Haptics', 'LocalNotifications', 'Share', 'StatusBar', 'App']);
+globalThis.Capacitor = fake(['Haptics', 'LocalNotifications', 'Share', 'StatusBar', 'App', 'GarniShare']);
 const n = await import('./web/js/native.js?app');
 out.native = n.isNative();
 out.haptic = [n.haptic('light'), n.haptic('success')];
@@ -45,6 +46,7 @@ listeners['App.backButton']({ canGoBack: true });
 globalThis.location.hash = '#/';
 listeners['App.backButton']({ canGoBack: false });
 out.back = back;
+out.taken = await n.takeShared();
 out.calls = calls;
 console.log(JSON.stringify(out));
 """
@@ -59,6 +61,10 @@ class NativeBridge(unittest.TestCase):
             raise AssertionError(res.stderr)
         cls.out = json.loads(res.stdout)
         cls.calls = [tuple(c[:2]) for c in cls.out["calls"]]
+
+    def test_shared_to_the_android_app(self):
+        self.assertEqual(self.out["taken"], {"title": "Pie", "text": "https://x.example/pie"})
+        self.assertIsNone(self.out["webTaken"])
 
     def test_web_does_nothing(self):
         self.assertEqual((self.out["webHaptic"], self.out["webAlert"], self.out["webCanShare"], self.out["webCalls"]), (False, False, False, 0))
