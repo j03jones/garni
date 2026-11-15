@@ -355,3 +355,13 @@ export async function resendConfirmation(email) {
   catch (err) { if (err.status === 0 || err.status === 429) throw err; }
 }
 
+
+// ------------------------------------------------------------------ households (a shopping list shared at home)
+export async function householdInfo() {
+  const rows = await authed('/rest/v1/rpc/household_info', { method: 'POST', body: {} });
+  return (Array.isArray(rows) ? rows[0] : rows) || null;
+}
+export const createHousehold = (name) => authed('/rest/v1/rpc/create_household', { method: 'POST', body: { p_name: name } });
+export const joinHousehold = (code) => authed('/rest/v1/rpc/join_household', { method: 'POST', body: { p_code: code } });
+export const leaveHousehold = () => authed('/rest/v1/rpc/leave_household', { method: 'POST', body: {} });
+export const saveHouseholdList = (list, at) => authed('/rest/v1/rpc/save_household_list', { method: 'POST', body: { p_list: list, p_at: at } });
