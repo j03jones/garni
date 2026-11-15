@@ -8,7 +8,7 @@ const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND = Deno.env.get('RESEND_API_KEY') || '';
 const FROM = 'Sprig <hello@mail.jonesridgekitchen.com>';
-const APP = 'https://j03jones.github.io/sprig/';
+const APP = 'https://garni.page/';
 const MAX_EMAILS_PER_HOUR = 10;   // a burst of requests gets one email each up to this, then they wait in Admin tools
 const CORS = {
   'Access-Control-Allow-Origin': '*',

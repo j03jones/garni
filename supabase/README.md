@@ -25,8 +25,8 @@ code never touches the Resend key: the site is public, so a key in it could be r
    - Sender email: `hello@mail.jonesridgekitchen.com`, Sender name: `Sprig`
    - Host: `smtp.resend.com`, Port: `465`, Username: `resend`, Password: the Resend key
 3. Authentication > **Rate Limits**: raise "emails sent per hour" (custom SMTP starts at 30) if needed.
-4. Authentication > **URL Configuration**: Site URL `https://j03jones.github.io/sprig/`, and add
-   `https://j03jones.github.io/sprig/**` to Redirect URLs so reset links can return to the app.
+4. Authentication > **URL Configuration**: Site URL `https://garni.page`, and add
+   `https://garni.page/**` to Redirect URLs so reset links can return to the app.
 5. Authentication > **Emails** > **Templates**: paste the files from `email-templates/` into the
    matching template, with these subjects:
    - Confirm signup: `confirm-signup.html`, "Confirm your Sprig account"

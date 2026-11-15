@@ -5,6 +5,8 @@
 //   #/s/<payload>      payload = version digit + base64url
 //                      '1' = deflate-raw compressed JSON, '0' = plain JSON (browsers without CompressionStream)
 
+import { appBase } from './applink.js';
+
 const LIMITS = { json: 60000, title: 300, ings: 300, field: 600, dir: 20000, cats: 20 };
 
 const b64 = {
@@ -83,4 +85,4 @@ export async function unpackRecipe(payload) {
 }
 
 /** The full address to send. */
-export const linkFor = (payload) => `${location.origin}${location.pathname}#/s/${payload}`;
+export const linkFor = (payload) => `${appBase()}#/s/${payload}`;

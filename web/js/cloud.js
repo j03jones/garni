@@ -2,6 +2,7 @@
 // Plain fetch, no library, so the offline app has nothing extra to cache. Everything here needs a
 // connection; callers fall back to their cached copy when it fails.
 import { SUPABASE_URL as URL_, SUPABASE_KEY as KEY } from './config.js';
+import { appBase } from './applink.js';
 
 const SESSION_KEY = 'sprig.session';
 let session = null;
@@ -123,7 +124,7 @@ export async function signOut() {
 
 /** Emails a password-reset link. Always looks successful, so it cannot be used to find out who has an account. */
 export async function requestPasswordReset(email) {
-  const back = encodeURIComponent(`${location.origin}${location.pathname}`);
+  const back = encodeURIComponent(`${appBase()}`);
   try { await call(`/auth/v1/recover?redirect_to=${back}`, { method: 'POST', body: { email } }); }
   catch (err) { if (err.status === 0 || err.status === 429) throw err; }
 }
@@ -307,7 +308,7 @@ export async function fetchRecipePage(url) {
 
 // ------------------------------------------------------------------ invites
 /** The link someone opens (or scans as a QR code) to join with an invite code. */
-export const inviteLink = (code) => `${location.origin}${location.pathname}#/join/${encodeURIComponent(code)}`;
+export const inviteLink = (code) => `${appBase()}#/join/${encodeURIComponent(code)}`;
 /** Whether an invite code still works, and what it is for. Works without signing in. */
 export async function inviteInfo(code) {
   const rows = await call('/rest/v1/rpc/invite_info', { method: 'POST', body: { p_code: code } });
@@ -330,14 +331,14 @@ export const setSignupOpen = (open) => authed('/rest/v1/app_settings?id=eq.true'
 export const sendInvite = ({ email, name, kind = 'student', restaurantId = null, memberRole = 'staff', requestId = null }) =>
   authed('/functions/v1/send-invite', { method: 'POST', body: {
     email, name, kind, restaurant_id: restaurantId, member_role: memberRole, request_id: requestId,
-    app_url: `${location.origin}${location.pathname}`,
+    app_url: `${appBase()}`,
   } });
 export const listInviteRequests = () => authed('/rest/v1/invite_requests?status=eq.waiting&order=created_at.desc&select=*');
 export const dismissInviteRequest = (id) => authed(`/rest/v1/invite_requests?id=eq.${enc(id)}`, {
   method: 'PATCH', body: { status: 'dismissed', handled_at: new Date().toISOString() } });
 /** Send the "confirm your email" message again. Always looks successful. */
 export async function resendConfirmation(email) {
-  const back = encodeURIComponent(`${location.origin}${location.pathname}`);
+  const back = encodeURIComponent(`${appBase()}`);
   try { await call(`/auth/v1/resend?redirect_to=${back}`, { method: 'POST', body: { type: 'signup', email } }); }
   catch (err) { if (err.status === 0 || err.status === 429) throw err; }
 }
