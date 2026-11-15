@@ -16,13 +16,13 @@ Everyone else needs an invite code (made with `create_invite`) until `app_settin
 ## Email (Resend)
 Sign-up confirmations and password resets are sent by Supabase. Supabase's built-in sender only
 allows a couple of emails an hour, so they go through Resend instead, from
-`Sprig <hello@mail.jonesridgekitchen.com>` (domain verified in Resend). The app's own
+`Sprig <hello@mail.garni.page>` (domain verified in Resend). The app's own
 code never touches the Resend key: the site is public, so a key in it could be read by anyone.
 
-1. Resend > API keys: use a key with **Sending access** restricted to `mail.jonesridgekitchen.com`.
+1. Resend > API keys: use a key with **Sending access** restricted to `mail.garni.page`.
 2. Supabase > Authentication > **Emails** > **SMTP Settings** (older dashboards: Project Settings >
    Authentication > SMTP Settings) > **Enable Custom SMTP**:
-   - Sender email: `hello@mail.jonesridgekitchen.com`, Sender name: `Sprig`
+   - Sender email: `hello@mail.garni.page`, Sender name: `Sprig`
    - Host: `smtp.resend.com`, Port: `465`, Username: `resend`, Password: the Resend key
 3. Authentication > **Rate Limits**: raise "emails sent per hour" (custom SMTP starts at 30) if needed.
 4. Authentication > **URL Configuration**: Site URL `https://garni.page`, and add
@@ -114,7 +114,7 @@ idempotency key and retries, and sends at most 10 emails an hour (more requests 
     supabase functions deploy request-invite --no-verify-jwt      (signed-out visitors call it)
 
 Add the secret **RESEND_API_KEY** (Edge Functions > Secrets) with a Resend key that can send from
-`mail.jonesridgekitchen.com`. Without it, requests are still saved but no email goes out.
+`mail.garni.page`. Without it, requests are still saved but no email goes out.
 
 **Open sign-up** is the switch in Admin tools > Sign-up (it sets `app_settings.open_signup`). When it is
 on, anyone can create a free student account without a code, the Request tab is hidden, and invite
