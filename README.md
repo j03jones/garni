@@ -318,6 +318,22 @@ builds the recipe data in `web/data/`. It has no screens of its own.
 
 The tooling's library file defaults to `~/.local/share/sprig/recipes.db` on Linux.
 
+## Where things are in the app (`web/js/`)
+
+| File | What it does |
+| --- | --- |
+| `app.js` | starts the app, routing, the recipe list and recipe page, editing, settings |
+| `planning.js` | meal plan (drag a meal to another day), shopping list, sharing it with a household, What can I make? |
+| `home.js` | the home feed's shelves |
+| `insights.js` | estimated cooking times, the vegetarian label, daily picks, what's in season |
+| `steps.js` | splitting a method into steps, the amounts each step uses, cook-mode voice commands |
+| `search.js` | typo-forgiving search, recent searches |
+| `covers.js` | the illustrated covers |
+| `motion.js` | page transitions, bottom sheets, swipes, pull to refresh, drag and drop |
+| `native.js` | the phone apps' native features (timer alerts, haptics, share sheet, speech, status bar, back button) |
+| `getin.js` | links and text shared to Garni, scanning a printed recipe |
+| `account.js`, `cloud.js` | accounts, admin tools, and the hosted database |
+
 ## Layout
 
     recipelib/mealmaster.py   MealMaster parser
