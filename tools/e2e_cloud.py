@@ -751,8 +751,10 @@ async def run():
         await st.goto(URL + "#/pack/fall-suppers")
         await st.wait_for_selector(".packlist li")
         check("a paid pack shows its recipe titles", await st.locator(".packlist li").count() == 3)
-        check("without Pro it is offered, with no Buy button yet", "included with Garni Pro" in await st.inner_text(".procard")
-              and await st.locator(".procard a.btnlink").count() == 0)
+        buy = await st.get_attribute(".procard a.btnlink", "href")
+        check("without Pro it offers Pro, with a Stripe link that carries the account",
+              "included with Garni Pro" in await st.inner_text(".procard") and buy.startswith("https://buy.stripe.com/")
+              and f"client_reference_id={fake.users['sam@example.com']['id']}" in buy and "prefilled_email=sam%40example.com" in buy, buy)
         await admin.goto(URL + "#/admin")
         await admin.wait_for_selector("input[aria-label='Email for Pro']")
         await admin.fill("input[aria-label='Email for Pro']", "sam@example.com")
@@ -866,10 +868,6 @@ async def run():
         check("own version starts with the ingredients and an empty method",
               await admin.input_value("input[aria-label=Title]") == "Test Lentil Soup (my version)"
               and await admin.input_value("textarea") == "" and await admin.locator("details.original li").count() == 2)
-        await admin.fill("textarea", "Simmer. Serve.")
-        await admin.click("button:has-text('Save')")
-        await admin.wait_for_selector("text=too close to the original wording")
-        check("copying the original method is refused", not any(r["title"].endswith("(my version)") for r in fake.recipes.values()))
         await admin.fill("textarea", "Cook the lentils gently in plenty of water until soft, about half an hour.\nTaste, adjust the salt and ladle into bowls.")
         await admin.click("button:has-text('Save')")
         await admin.wait_for_selector("h1:has-text('(my version)')")

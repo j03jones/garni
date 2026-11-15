@@ -6,12 +6,13 @@
 import * as cloud from './cloud.js';
 import { isNative } from './native.js';
 
-// Paste each Stripe Payment Link here when the Stripe account exists (Payment Links in the Stripe dashboard).
-// In Stripe, set each link's metadata "product" (pro, supporter) or map it in STRIPE_PRODUCTS (supabase/README.md).
+// Each link's id is mapped to what it unlocks in supabase/functions/stripe-webhook (LINKS). A new link needs
+// a line there too.
+// These are Stripe test-mode links: no real money moves. Swap in the live links when the account is activated.
 export const PAYMENT_LINKS = {
-  pro: '',          // Garni Pro, lifetime: $29
-  tip3: '',         // supporter tips
-  tip5: '',
+  pro: 'https://buy.stripe.com/test_14AdR30gs6fTcAB4aEbo400',     // Garni Pro, lifetime: $29
+  tip3: '',                                                        // supporter tips
+  tip5: 'https://buy.stripe.com/test_4gMbIV6EQ33H1VX4aEbo401',
   tip10: '',
 };
 export const PRO_PRICE = '$29';

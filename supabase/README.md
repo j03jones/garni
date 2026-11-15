@@ -80,22 +80,24 @@ on the phone to about 200 KB before uploading. Existing projects run it once in 
 a straight copy of another website's recipe (one with a link to the original and no "Adapted from"
 credit) and link cards.
 
-### Turning payments on (Stripe), later
-Nothing below is needed until there's a Stripe account; until then the Pro card says payments open soon.
+### Payments (Stripe)
+Set up in **test mode** (a Stripe sandbox: no real money moves):
 
-1. In Stripe, make one-time Payment Links: Garni Pro ($29) and, if you like, tips ($3, $5, $10). On each,
-   add metadata `product` = `pro` (or `supporter` for tips), and set the after-payment page to
-   `https://garni.page/#/settings`.
-2. Paste each link into `PAYMENT_LINKS` in `web/js/pro.js`. The app adds the account id
-   (`client_reference_id`) and email, so the purchase lands on the right account.
-3. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`
-   (Stripe signs its calls instead; the function checks the `Stripe-Signature` header).
-4. In Stripe → Developers → Webhooks, add `https://<project>.supabase.co/functions/v1/stripe-webhook`
-   for `checkout.session.completed` and `charge.refunded`, then save its signing secret:
-   `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`
-   Optional: `STRIPE_PRODUCTS='{"plink_...":"pro"}'` maps Payment Link ids to products instead of metadata.
-5. A refund marks the purchase revoked. The phone apps never show Buy buttons (the stores want their own
-   in-app purchase); Pro bought on the web still counts in them.
+- Payment Links: Garni Pro ($29, one time) and Tip for Garni ($5). Each sends people back to
+  `https://garni.page/#/settings`. Their addresses are in `PAYMENT_LINKS` in `web/js/pro.js`; their ids are
+  mapped to what they unlock in `LINKS` in `supabase/functions/stripe-webhook/index.ts`.
+- The `stripe-webhook` function is deployed with JWT verification off (Stripe signs its calls instead).
+  Stripe sends it `checkout.session.completed` and `charge.refunded` (destination `garni-supabase`).
+- Its secret `STRIPE_WEBHOOK_SECRET` (the destination's signing secret, `whsec_...`) is saved in
+  Supabase › Edge Functions › Secrets.
+
+Test with card `4242 4242 4242 4242`, any future date and any CVC, while signed in to Garni.
+
+**Going live** (after Stripe has verified the business and the bank account): make the same two links in
+live mode, put their addresses in `PAYMENT_LINKS` and their ids in `LINKS`, add a live-mode webhook
+destination to the same address, and replace `STRIPE_WEBHOOK_SECRET` with the live one.
+A refund marks the purchase revoked. The phone apps never show Buy buttons (the stores want their own
+in-app purchase); Pro bought on the web still counts in them.
 
 Restaurant billing (`restaurants.subscription_status`) is still set by hand in Admin tools.
 

@@ -324,7 +324,7 @@ async def run():
         await page.wait_for_selector(".procard")
         pro = await page.inner_text(".procard")
         check("Settings offers Support Garni / Unlock Pro", "Unlock Pro" in pro and "Sign in first" in pro, pro[:80])
-        check("and shows no Buy button before payments open", await page.locator(".procard a.btnlink").count() == 0)
+        check("and shows no Buy button until signed in", await page.locator(".procard a.btnlink").count() == 0)
 
         # ---- hands-free cook mode
         await page.goto(URL + "#/r/6cd1288901")

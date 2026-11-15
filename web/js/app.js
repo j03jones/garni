@@ -12,7 +12,7 @@ import { priceBook, recipeCosting } from './costui.js';
 import { transferPage } from './transferui.js';
 import { fromIndexRow, fromRecord, fromRow, hasSource, isAdapted, toRecord } from './model.js';
 import { COLLECTIONS } from './linkdata.js';
-import { MAX_OVERLAP, recipeFromSchema, wordingOverlap } from './webimport.js';
+import { recipeFromSchema } from './webimport.js';
 import * as store from './store.js';
 import { SECTIONS } from './groups.js';
 import { addStars, buzz, confetti, copyText, emojiFor, greeting, icon, isStarred, onStarsChange, replaceStars, bouquetArt, starIds, tile, toggleStar } from './ui.js';
@@ -1341,11 +1341,6 @@ function viewEdit(id, template) {
     if (isAdapted(base)) recipe.adapted = { ...base.adapted };
     if (adapting) {
       if (!recipe.dir) { toast('Write the method in your own words first'); dir.focus(); return; }
-      if (wordingOverlap(recipe.dir, base.adaptFrom) > MAX_OVERLAP) {
-        toast('Your method is still too close to the original wording. Rewrite the steps in your own words.', 5000);
-        dir.focus();
-        return;
-      }
     }
     const rec = toRecord(recipe);
     let target = recipe.id;

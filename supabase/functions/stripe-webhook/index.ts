@@ -1,18 +1,25 @@
 // stripe-webhook: Stripe tells Garni about payments here, and the purchase is recorded on the buyer's account
-// (public.entitlements). NOT DEPLOYED YET: it goes live when the Stripe account exists (see supabase/README.md).
+// (public.entitlements). Deployed with JWT verification off: Stripe calls it, not a signed-in person, and the
+// Stripe-Signature check below stands in for it.
 //
-//   supabase functions deploy stripe-webhook --no-verify-jwt      (Stripe calls it, not a signed-in person)
+//   supabase functions deploy stripe-webhook --no-verify-jwt
 //
 // Secrets (Edge Functions > Secrets):
 //   STRIPE_WEBHOOK_SECRET   the "whsec_..." signing secret of this endpoint in the Stripe dashboard
-//   STRIPE_PRODUCTS         JSON from Payment Link id to product, e.g. {"plink_abc":"pro","plink_def":"pack:weeknights","plink_tip":"supporter"}
-//                           (a Payment Link's metadata.product works too)
+//   STRIPE_PRODUCTS         optional JSON adding Payment Link ids to LINKS below, e.g. {"plink_abc":"pack:weeknights"}
 // The app opens a Payment Link with ?client_reference_id=<the person's account id>, which comes back here.
 // Events: checkout.session.completed records the purchase; charge.refunded takes it back. Anything else is ignored.
 const URL_ = Deno.env.get('SUPABASE_URL')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
-const PRODUCTS: Record<string, string> = (() => { try { return JSON.parse(Deno.env.get('STRIPE_PRODUCTS') || '{}'); } catch { return {}; } })();
+// Garni's Payment Links (ids aren't secret). STRIPE_PRODUCTS can add to or override these.
+const LINKS: Record<string, string> = {
+  plink_1UcCxC8wzxd3IPZFhXFF4ph4: 'pro',          // test mode: Garni Pro, $29
+  plink_1UcCyz8wzxd3IPZFPPadEdQc: 'supporter',    // test mode: Tip for Garni, $5
+};
+const PRODUCTS: Record<string, string> = (() => {
+  try { return { ...LINKS, ...JSON.parse(Deno.env.get('STRIPE_PRODUCTS') || '{}') }; } catch { return LINKS; }
+})();
 const PRODUCT_RE = /^(pro|supporter|pack:[a-z0-9-]{1,40})$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TOLERANCE_S = 300;   // a signed message older than 5 minutes is refused (replays)
