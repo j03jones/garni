@@ -1,8 +1,8 @@
 {
-  "name": "sprig",
+  "name": "garni",
   "version": "0.20.0",
   "private": true,
-  "description": "Sprig: a recipe app for the web, iOS and Android",
+  "description": "Garni: a recipe app for the web, iOS and Android",
   "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "serve": "python3 -m http.server 8000 -d web",

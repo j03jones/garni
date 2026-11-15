@@ -1,11 +1,17 @@
-# Sprig
+# Garni
 
 A recipe app for the **web, iOS and Android**: search a big built-in library, scale any recipe, plan the
 week, build a shopping list, cook step by step with timers, and keep your own recipes. It works with no
 connection after the first visit.
 
-Sprig began as a copy of the Recipe Library project. The Windows, macOS and Linux desktop builds are gone;
-this project is the web app plus phone apps built from the same code.
+Garni began as a copy of the Recipe Library project. The Windows, macOS and Linux desktop builds are gone;
+this project is the web app plus phone apps built from the same code. It lives at https://garni.page.
+
+The name comes from the *bouquet garni*: a little bundle of thyme, bay and parsley tied with kitchen
+twine and dropped into the pot. The app was briefly called Sprig, so a few things nobody sees still use
+that word: the keys it saves data under on a device (`sprig.stars`, `sprig-user`, the `sprig-…` caches),
+the Supabase project's name, and the tooling's library folder. Renaming those would wipe people's starred
+recipes, plans and sign-ins, so they stay.
 
 | Where | How it is built |
 | --- | --- |
@@ -20,7 +26,7 @@ this project is the web app plus phone apps built from the same code.
 ## Build the phone apps
 
 The phone apps are thin native shells (Capacitor 6) around the same `web/` folder. App id:
-`com.jonesridgekitchen.sprig`.
+`page.garni`.
 
     npm install
     npx cap sync                  # copy web/ into both native projects (run after every change to web/)
@@ -38,9 +44,9 @@ always shows the new version.
 ## Look and feel
 
 "Fresh market": warm off-white paper, one leaf green, a tangerine highlight, big rounded cards with soft
-shadows, a floating tab bar, Outfit headings over DM Sans text, and a sprig that grows in the corner of
-each page header. Light and dark follow the device. The colours are the variables at the top of
-`web/style.css`; the sprig drawing is in `web/icons/icon.svg` and `web/js/ui.js`.
+shadows, a floating tab bar, Outfit headings over DM Sans text, and a little bouquet garni in the corner of
+each page header (the stems draw in, the herbs open, then the twine ties itself into a g). Light and dark follow the device. The colours are the variables at the top of
+`web/style.css`; the bouquet garni drawing is in `web/icons/icon.svg` and `web/js/ui.js`.
 
     python3 tools/make_icons.py   # redraw every icon and splash screen (web, Android, iOS) from icon.svg
 
@@ -49,7 +55,7 @@ mentions a time, and small animations that switch off when the device asks for r
 
 ## Accounts
 
-Sprig has its own Supabase project (`sprig`, connection details in `web/js/config.js`, publishable key only).
+Garni has its own Supabase project (`sprig`, connection details in `web/js/config.js`, publishable key only).
 It is separate from the Recipe Library database: no accounts or recipes are shared between the two.
 Sign-up is by invitation until the administrator opens it in Admin tools > Sign-up. `supabase/README.md`
 explains the database, the three edge functions and the email setup. Emptying the two values in

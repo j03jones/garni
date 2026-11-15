@@ -1,4 +1,4 @@
-"""Command-line front end for the Sprig recipe tooling.
+"""Command-line front end for the Garni recipe tooling.
 
     python -m recipelib import samples/sample.mmf    (files or whole folders)
     python -m recipelib export -o mine.mmf [ids]   (MealMaster file; every recipe if no ids)

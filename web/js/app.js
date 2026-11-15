@@ -15,7 +15,7 @@ import { COLLECTIONS } from './linkdata.js';
 import { MAX_OVERLAP, VEGAN_GROUP, recipeFromSchema, wordingOverlap } from './webimport.js';
 import * as store from './store.js';
 import { SECTIONS } from './groups.js';
-import { addStars, buzz, confetti, copyText, emojiFor, greeting, icon, isStarred, onStarsChange, replaceStars, sprigArt, starIds, tile, toggleStar } from './ui.js';
+import { addStars, buzz, confetti, copyText, emojiFor, greeting, icon, isStarred, onStarsChange, replaceStars, bouquetArt, starIds, tile, toggleStar } from './ui.js';
 import { restoreTimers, timerChips } from './timers.js';
 import * as cloud from './cloud.js';
 import { accountCard, viewAdmin, viewJoin } from './account.js';
@@ -89,9 +89,9 @@ function confirmDialog(message, okLabel = 'OK', danger = false) {
   });
 }
 
-/** A page header: a soft leaf-green wash with the sprig in its corner ('hero' is the taller home-page one). */
+/** A page header: a soft leaf-green wash with the bouquet garni in its corner ('hero' is the taller home-page one). */
 function band(kind, ...kids) {
-  return h('header', { class: `band ${kind}` }, kids, sprigArt());
+  return h('header', { class: `band ${kind}` }, kids, bouquetArt());
 }
 const pageHead = (title, sub) => band('page', h('h1', null, title), sub && h('p', { class: 'sub' }, sub));
 
@@ -1087,7 +1087,7 @@ function viewRecipe(id, preset = null) {
         h('button', { onclick: () => window.print() }, 'Print card')),
       !shared && sharing(r),
       r.tags && r.tags.length > 0 && h('p', { class: 'muted small' }, 'Original labels: ', r.tags.join(', '))),
-    h('p', { class: 'printfoot' }, 'Sprig'));
+    h('p', { class: 'printfoot' }, 'Garni'));
   paint();
   window.scrollTo(0, 0);
 }
@@ -1834,7 +1834,7 @@ async function viewSettings() {
       rebuild();
       toast(`Imported ${recs.length} recipe change${recs.length === 1 ? '' : 's'}`);
       viewSettings();
-    } catch { toast('That file is not a Sprig backup'); }
+    } catch { toast('That file is not a Garni backup'); }
   }
 
   const localNew = mine.filter((m) => !m.deleted && !lib.base.some((b) => b.id === m.id));
@@ -1855,7 +1855,7 @@ async function viewSettings() {
 
   function exportBackup() {
     const blob = new Blob([JSON.stringify({ app: 'recipelib', v: 1, records: [...lib.mine.values()], stars: starIds() }, null, 1)], { type: 'application/json' });
-    const a = h('a', { href: URL.createObjectURL(blob), download: `sprig-backup-${new Date().toISOString().slice(0, 10)}.json` });
+    const a = h('a', { href: URL.createObjectURL(blob), download: `garni-backup-${new Date().toISOString().slice(0, 10)}.json` });
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
@@ -1998,7 +1998,7 @@ async function boot() {
   } else if (linkType) {
     const [t, m] = {
       recovery: ['Choose a new password', 'You’re signed in. Choose a new password below.'],
-      invite: ['Welcome to Sprig!', 'Your invite worked and you’re signed in. Choose a password below so you can sign in on other devices.'],
+      invite: ['Welcome to Garni!', 'Your invite worked and you’re signed in. Choose a password below so you can sign in on other devices.'],
     }[linkType] || ['Email confirmed', 'Your account is ready and you’re signed in.'];
     infoDialog(t, m);
   }

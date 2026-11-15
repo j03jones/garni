@@ -29,7 +29,7 @@ export function avatarEl(path, name, small = false) {
 const STATUSES = ['inactive', 'trialing', 'active', 'past_due', 'canceled'];
 const STATUS_LABEL = { inactive: 'Not subscribed', trialing: 'Trial', active: 'Active', past_due: 'Payment overdue', canceled: 'Canceled' };
 
-const APP_NAME = 'Sprig';
+const APP_NAME = 'Garni';
 function inviteMessage(link, what = '') {
   return `You're invited to ${APP_NAME}${what ? ` ${what}` : ''}. Open this link on your phone to create your account: ${link}`;
 }
@@ -97,7 +97,7 @@ function emailInviteForm(ctx, opts, onSent) {
     try {
       await cloud.sendInvite({ ...who, email: email.value.trim(), name: name.value.trim() });
       toast(`Invite sent to ${email.value.trim()}`, 3500);
-      msg.textContent = `Sent. ${name.value.trim() || 'They'} will get an email from Sprig with a button to join (check spam if it doesn't arrive).`;
+      msg.textContent = `Sent. ${name.value.trim() || 'They'} will get an email from Garni with a button to join (check spam if it doesn't arrive).`;
       name.value = ''; email.value = '';
       onSent?.();
     } catch (err) { msg.textContent = err.message; }
@@ -417,7 +417,7 @@ function peopleSection(ctx) {
         h('strong', null, p.display_name || p.email), h('span', { class: 'badge', style: 'margin-left:0' }, ROLE_TEXT[p.role] || p.role)),
       h('p', { class: 'small', style: 'overflow-wrap:anywhere' }, p.email),
       p.restaurants.length ? h('p', { class: 'small' }, p.restaurants.join(', ')) : null,
-      p.email_confirmed ? null : h('p', { class: 'small', style: 'color:var(--danger)' }, 'Has not confirmed their email yet. Ask them to check spam for the email from Sprig.'),
+      p.email_confirmed ? null : h('p', { class: 'small', style: 'color:var(--danger)' }, 'Has not confirmed their email yet. Ask them to check spam for the email from Garni.'),
       h('p', { class: 'muted small' }, facts.join(' · ')),
       remove);
   };

@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
   try {
     res = await fetch(url, {
       redirect: 'follow', signal: AbortSignal.timeout(15000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Sprig; personal recipe box)', Accept: 'text/html,*/*;q=0.5' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Garni; personal recipe box)', Accept: 'text/html,*/*;q=0.5' },
     });
   } catch {
     return json({ error: 'Could not reach that website. Check the link.' }, 502);

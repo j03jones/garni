@@ -7,7 +7,7 @@ const URL_ = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND = Deno.env.get('RESEND_API_KEY') || '';
-const FROM = 'Sprig <hello@mail.garni.page>';
+const FROM = 'Garni <hello@mail.garni.page>';
 const APP = 'https://garni.page/';
 const MAX_EMAILS_PER_HOUR = 10;   // a burst of requests gets one email each up to this, then they wait in Admin tools
 const CORS = {
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
       const n = Array.isArray(waiting.data) ? waiting.data.length : 1;
       const admin = `${APP}#/admin`;
       const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#14181d;max-width:520px">
-<p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#17835a;font-weight:700;margin:0 0 12px">Sprig</p>
+<p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#17835a;font-weight:700;margin:0 0 12px">Garni</p>
 <h1 style="font-size:20px;margin:0 0 12px">${esc(name)} asked for an invite</h1>
 <p style="margin:0 0 4px"><strong>Email:</strong> ${esc(email)}</p>
 <p style="margin:0 0 4px"><strong>They are:</strong> ${esc(ABOUT[about])}</p>

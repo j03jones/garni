@@ -137,17 +137,24 @@ export async function copyText(text) {
 
 // ------------------------------------------------------------------ header art, motion, feedback
 
-/** The sprig that grows in the corner of a page header: the stem draws itself, then the leaves open. */
-export function sprigArt() {
+/** The bouquet garni in the corner of a page header (the app icon's drawing): the stems draw in, the
+ *  thyme, bay and parsley open, then the twine ties itself round the stems into a lowercase g. */
+export function bouquetArt() {
+  const leaf = 'M0 0C-14-6-22-20-14-32C-19-44-7-52 0-45C7-52 19-44 14-32C22-20 14-6 0 0Z';
+  const thyme = [[152, 142, 12, 7, -40], [173, 152, 11, 6.5, 20], [162, 170, 11, 6.5, -70], [193, 181, 11, 6.5, 25],
+    [182, 199, 11, 6.5, -70], [209, 213, 10, 6, 30], [198, 231, 10, 6, -75]]
+    .map(([x, y, rx, ry, r], i) => `<g transform="rotate(${r} ${x} ${y})"><ellipse class="lf" style="--i:${6 - i}" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/></g>`).join('');
+  const parsley = [[-10, 1.25, 8], [-62, 1.05, 7], [42, 1.05, 9]]
+    .map(([r, s, i]) => `<g transform="translate(352 180) rotate(${r}) scale(${s})"><path class="lf base" style="--i:${i}" d="${leaf}"/></g>`).join('');
   const wrap = document.createElement('span');
-  wrap.innerHTML = `<svg class="flourish" viewBox="0 0 120 150" aria-hidden="true" focusable="false">
-  <path class="stem" d="M30 145C34 100 58 60 88 28"/>
-  <g transform="translate(36.5 112) rotate(-18) scale(1)"><path class="lf" style="--i:0" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
-  <g transform="translate(43 95) rotate(-140) scale(1)"><path class="lf" style="--i:1" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
-  <g transform="translate(50.5 80) rotate(-5) scale(1)"><path class="lf z" style="--i:2" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
-  <g transform="translate(60 63) rotate(-120) scale(0.95)"><path class="lf" style="--i:3" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
-  <g transform="translate(70.5 48) rotate(5) scale(0.85)"><path class="lf" style="--i:4" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
-  <g transform="translate(86 30) rotate(-48) scale(0.9)"><path class="lf" style="--i:5" d="M0 0C8-15 30-17 42 0 30 17 8 15 0 0Z"/></g>
+  wrap.innerHTML = `<svg class="flourish" viewBox="128 66 336 400" aria-hidden="true" focusable="false">
+  <path class="twine back" d="M210 330A46 24 0 0 1 302 330"/>
+  <path class="stem" d="M236 376C240 352 238 332 236 304C222 244 198 192 152 142"/>
+  <path class="stem" d="M256 380L256 304"/>
+  <path class="stem" d="M274 376C272 352 274 332 276 304C292 252 318 212 352 180"/>
+  ${thyme}${parsley}
+  <path class="lf base" style="--i:4" d="M256 306C212 250 212 148 262 80C306 148 302 250 256 306Z"/>
+  <path class="twine" d="M210 330A46 24 0 0 0 302 330L302 404C302 446 268 458 238 452C214 447 202 434 200 420"/>
 </svg>`;
   return wrap.firstElementChild;
 }

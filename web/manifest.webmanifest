@@ -1,7 +1,7 @@
 {
-  "name": "Sprig",
-  "short_name": "Sprig",
-  "description": "Sprig: your recipes to search, scale, plan and cook, even offline",
+  "name": "Garni",
+  "short_name": "Garni",
+  "description": "Garni: your recipes to search, scale, plan and cook, even offline",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

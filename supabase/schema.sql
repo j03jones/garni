@@ -1,4 +1,4 @@
--- Sprig: database setup for Supabase.
+-- Garni: database setup for Supabase.
 --
 -- HOW TO RUN (once, on a new project):
 --   1. Change the email on the line marked  CHANGE ME  to the email you will sign up with as admin.

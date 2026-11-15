@@ -2,7 +2,7 @@
 
 Required Notice: Copyright (c) 2026 Joseph Jones (https://jonesridgekitchen.com)
 
-Sprig is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+Garni is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
 ## In plain words
 
@@ -19,9 +19,9 @@ This summary is not the license; the [LICENSE](LICENSE) file is.
 
 ## Earlier versions
 
-Sprig grew out of the Recipe Library project. Versions of that project up to and including v0.17.0 were published under the GNU General Public License
+Garni grew out of the Recipe Library project. Versions of that project up to and including v0.17.0 were published under the GNU General Public License
 version 3. That license cannot be withdrawn from copies already obtained under it: those versions stay
-available under the GPL. Everything after that, and all of Sprig, is under the PolyForm Noncommercial License.
+available under the GPL. Everything after that, and all of Garni, is under the PolyForm Noncommercial License.
 
 ## What the license does not cover
 

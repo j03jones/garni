@@ -38,7 +38,7 @@ function fromTokenResponse(t) {
 // ------------------------------------------------------------------ low-level calls
 /** False until web/js/config.js names a Supabase project. */
 export const isConfigured = () => !!(URL_ && KEY);
-const NOT_SET_UP = 'Accounts are not switched on in this version of Sprig yet. Everything on this device still works.';
+const NOT_SET_UP = 'Accounts are not switched on in this version of Garni yet. Everything on this device still works.';
 
 async function call(path, { method = 'GET', body, token, headers = {} } = {}) {
   if (!isConfigured()) throw new CloudError(NOT_SET_UP, 0, 'not_configured');

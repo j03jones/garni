@@ -1,4 +1,4 @@
-// send-invite: emails someone an invite to Sprig.
+// send-invite: emails someone an invite to Garni.
 // 1. Makes a one-person invite code as the signed-in caller (so the database's own rules decide who may
 //    invite whom: the admin can invite anyone, a restaurant owner only staff for their restaurant).
 // 2. Asks Supabase Auth to send its "Invite user" email (through the project's SMTP, i.e. Resend). The

@@ -243,7 +243,7 @@ async def new_page(b, fake, w=390, h=844):
     # the tests talk to the fake server whatever web/js/config.js points at (it is empty until a project exists)
     await ctx.route(re.compile(r".*/js/config\.js$"), lambda route: route.fulfill(
         content_type="text/javascript",
-        body="export const SUPABASE_URL = 'https://sprig-test.supabase.co';\nexport const SUPABASE_KEY = 'sb_publishable_test';\n"))
+        body="export const SUPABASE_URL = 'https://garni-test.supabase.co';\nexport const SUPABASE_KEY = 'sb_publishable_test';\n"))
     page = await ctx.new_page()
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
     page.on("pageerror", lambda e: errors.append(str(e)))
@@ -626,7 +626,7 @@ async def run():
         kim = fake.users["kim@example.com"]
         ictx, inv = await new_page(b, fake)
         await inv.goto(URL + f"#access_token=tok-{kim['id']}&refresh_token=r&expires_in=3600&type=invite")
-        check("invite email link welcomes them", "Welcome to Sprig" in await close_dialog(inv))
+        check("invite email link welcomes them", "Welcome to Garni" in await close_dialog(inv))
         await inv.wait_for_selector("text=Choose a password")
         await inv.screenshot(path="/tmp/cloud_invited.png", full_page=True)
         check("no Cancel on the first password", await inv.locator(".card button:has-text('Cancel')").count() == 0)

@@ -292,7 +292,7 @@ const clean = (r) => ({ ...r, title: text(r.title).slice(0, 300), ings: r.ings.s
 const usable = (r) => r.title && (r.ings.length || r.dir);
 
 async function fromJsonValue(value, label) {
-  if (value && typeof value === 'object' && value.app === 'recipelib') throw new Error('That is a Sprig backup. Restore it in Settings.');
+  if (value && typeof value === 'object' && value.app === 'recipelib') throw new Error('That is a Garni backup. Restore it in Settings.');
   if (looksSchema(value)) return findRecipeNodes(value).map((n) => recipeFromSchema(n, text(n.url || ''), ''));
   const items = Array.isArray(value) ? value : value && typeof value === 'object' ? (Array.isArray(value.recipes) ? value.recipes : Array.isArray(value.items) ? value.items : Array.isArray(value.results) ? value.results : [value]) : [];
   const mapped = items.filter((x) => x && typeof x === 'object' && (x.name || x.title)).map(fromRichRecipe);

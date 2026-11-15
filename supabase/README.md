@@ -16,24 +16,24 @@ Everyone else needs an invite code (made with `create_invite`) until `app_settin
 ## Email (Resend)
 Sign-up confirmations and password resets are sent by Supabase. Supabase's built-in sender only
 allows a couple of emails an hour, so they go through Resend instead, from
-`Sprig <hello@mail.garni.page>` (domain verified in Resend). The app's own
+`Garni <hello@mail.garni.page>` (domain verified in Resend). The app's own
 code never touches the Resend key: the site is public, so a key in it could be read by anyone.
 
 1. Resend > API keys: use a key with **Sending access** restricted to `mail.garni.page`.
 2. Supabase > Authentication > **Emails** > **SMTP Settings** (older dashboards: Project Settings >
    Authentication > SMTP Settings) > **Enable Custom SMTP**:
-   - Sender email: `hello@mail.garni.page`, Sender name: `Sprig`
+   - Sender email: `hello@mail.garni.page`, Sender name: `Garni`
    - Host: `smtp.resend.com`, Port: `465`, Username: `resend`, Password: the Resend key
 3. Authentication > **Rate Limits**: raise "emails sent per hour" (custom SMTP starts at 30) if needed.
 4. Authentication > **URL Configuration**: Site URL `https://garni.page`, and add
    `https://garni.page/**` to Redirect URLs so reset links can return to the app.
 5. Authentication > **Emails** > **Templates**: paste the files from `email-templates/` into the
    matching template, with these subjects:
-   - Confirm signup: `confirm-signup.html`, "Confirm your Sprig account"
-   - Reset password: `reset-password.html`, "Reset your Sprig password"
+   - Confirm signup: `confirm-signup.html`, "Confirm your Garni account"
+   - Reset password: `reset-password.html`, "Reset your Garni password"
    - Change email address: `change-email.html`, "Confirm your new email address"
-   - Magic link: `magic-link.html`, "Your Sprig sign-in link"
-   - Invite user: `invite.html`, "You're invited to Sprig"
+   - Magic link: `magic-link.html`, "Your Garni sign-in link"
+   - Invite user: `invite.html`, "You're invited to Garni"
 6. Test: sign up with a spare address and use "Forgot password?" in the app, then check
    resend.com/emails shows both as Delivered.
 

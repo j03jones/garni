@@ -1,4 +1,4 @@
-package com.jonesridgekitchen.sprig;
+package page.garni;
 
 import com.getcapacitor.BridgeActivity;
 

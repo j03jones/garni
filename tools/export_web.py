@@ -37,7 +37,7 @@ def recipe_to_row(r) -> list:
 def main() -> int:
     ap = argparse.ArgumentParser()
     src = ap.add_mutually_exclusive_group(required=True)
-    src.add_argument("--db", help="a Sprig library database file")
+    src.add_argument("--db", help="a Garni library database file")
     src.add_argument("--mmf", nargs="+", help="MealMaster files")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "web" / "data" / "recipes.json"))
     ap.add_argument("--drop-near-duplicates", choices=["high", "likely", "possible"],

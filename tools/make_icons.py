@@ -5,7 +5,7 @@
 
 It writes the web icons, the masters in resources/, and the Android and iOS icon and splash sets.
 
-The sprig drawing lives in web/icons/icon.svg; change it there and run this again.
+The bouquet garni drawing lives in web/icons/icon.svg; change it there and run this again.
 """
 import asyncio
 import re
@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SVG = (ROOT / "web/icons/icon.svg").read_text()
-SPRIG = re.search(r"(<g transform.*</g>)", SVG, re.S).group(1)       # the drawing without its background
+ART = re.search(r"(<g transform.*</g>)", SVG, re.S).group(1)       # the drawing without its background
 GREEN = "#12994f"
 
 
@@ -23,14 +23,14 @@ def page(size: int, body: str, background: str = "transparent") -> str:
 
 
 def boxed(inner: str, scale: float = 1.0) -> str:
-    """The sprig in a 512 box, optionally shrunk about the centre (Android crops the outer third)."""
+    """The drawing in a 512 box, optionally shrunk about the centre (Android crops the outer third)."""
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'
             f'<g transform="translate(256 256) scale({scale}) translate(-256 -256)">{inner}</g></svg>')
 
 
 def splash(background: str) -> str:
     tile = (f'<g transform="translate(1166 1166)"><rect width="400" height="400" rx="96" fill="{GREEN}"/>'
-            f'<g transform="scale(.78125)">{SPRIG}</g></g>')
+            f'<g transform="scale(.78125)">{ART}</g></g>')
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">'
             f'<rect width="2732" height="2732" fill="{background}"/>{tile}</svg>')
 
@@ -46,7 +46,7 @@ async def main() -> None:
         (web / "icon-maskable-512.png", 512, SVG, "transparent"),
         (web / "apple-touch-icon.png", 180, SVG, "transparent"),
         (res / "icon-only.png", 1024, SVG, "transparent"),
-        (res / "icon-foreground.png", 1024, boxed(SPRIG, 0.72), "transparent"),
+        (res / "icon-foreground.png", 1024, boxed(ART, 0.72), "transparent"),
         (res / "icon-background.png", 1024, boxed(f'<rect width="512" height="512" fill="{GREEN}"/>'), "transparent"),
         (res / "splash.png", 2732, splash("#dff3e6"), "transparent"),
         (res / "splash-dark.png", 2732, splash("#15251c"), "transparent"),

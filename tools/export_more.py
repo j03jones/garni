@@ -91,7 +91,7 @@ def split(core_rows, library, progress=print, level=duplicates.HIGH):
 def main(argv=None) -> int:
     root = Path(__file__).resolve().parent.parent
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--db", required=True, help="a Sprig library database file")
+    ap.add_argument("--db", required=True, help="a Garni library database file")
     ap.add_argument("--data", default=str(root / "web" / "data"), help="the web app's data folder")
     ap.add_argument("--refresh-core", action="store_true",
                     help="also update built-in recipes with the library's corrected text (ids are kept)")

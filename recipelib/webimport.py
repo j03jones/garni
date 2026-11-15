@@ -30,7 +30,7 @@ from .models import Ingredient, Recipe
 from .units import canonical_unit, parse_quantity
 
 MAX_BYTES = 5 * 1024 * 1024
-USER_AGENT = f"Mozilla/5.0 (compatible; Sprig/{__version__}; personal recipe box)"
+USER_AGENT = f"Mozilla/5.0 (compatible; Garni/{__version__}; personal recipe box)"
 VEGAN_GROUP = "Vegetarian & Vegan"
 
 

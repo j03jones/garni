@@ -235,7 +235,7 @@ async def run():
         # ---- website look and the new kitchen features
         await page.goto(URL + "#/")
         await page.wait_for_selector(".band.hero .eyebrow")
-        check("home page header has the sprig", await page.locator(".band.hero svg.flourish .stem").count() == 1)
+        check("home page header has the bouquet garni", await page.locator(".band.hero svg.flourish .twine").count() == 2)
         check("signed-out visitors do not see the source chips", not await page.locator(".chips.src").is_visible())
         bg = await page.evaluate("getComputedStyle(document.querySelector('.band.hero')).backgroundColor")
         check("header uses the leaf wash", bg == "rgb(223, 243, 230)", bg)

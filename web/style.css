@@ -1,4 +1,4 @@
-/* Sprig, in the "fresh market" look: warm off-white paper, one juicy leaf green, a tangerine zest for
+/* Garni, in the "fresh market" look: warm off-white paper, one juicy leaf green, a tangerine zest for
    highlights, big rounded cards with soft shadows, Outfit headings over DM Sans text. */
 
 :root {
@@ -76,14 +76,17 @@ body[data-view=edit] main { padding-bottom: 3rem; }
 }
 @media (prefers-color-scheme: dark) { .eyebrow, .label { color: var(--link); } }
 .band.hero, .band:has(+ .searchbar) { padding-bottom: 4.6rem; }
-/* the sprig that grows in the corner of each header */
-.band .flourish { position: absolute; z-index: 0; right: -.2rem; bottom: .9rem; width: 4.6rem; height: auto; pointer-events: none; color: var(--leaf); opacity: .9; }
-.band.hero .flourish { width: 7.4rem; bottom: 3.2rem; }
+/* the bouquet garni in the corner of each header: stems draw in, herbs open, then the twine ties the g */
+.band .flourish { position: absolute; z-index: 0; right: .1rem; bottom: .7rem; width: 4.4rem; height: auto; pointer-events: none; color: var(--leaf); opacity: .9; }
+.band.hero .flourish { width: 7rem; bottom: 2.6rem; }
 .band.rband .flourish { display: none; }
-.flourish .stem { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 260; animation: draw 1.1s cubic-bezier(.3, .6, .2, 1) .1s backwards; }
-.flourish .lf { fill: currentColor; transform-box: fill-box; transform-origin: 0 50%; animation: leaf .5s cubic-bezier(.3, 1.5, .5, 1) backwards; animation-delay: calc(.35s + var(--i) * 90ms); }
-.flourish .lf.z { fill: var(--zest); }
-@keyframes draw { from { stroke-dashoffset: 260; } to { stroke-dashoffset: 0; } }
+.flourish .stem { fill: none; stroke: currentColor; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 300; animation: draw .9s cubic-bezier(.3, .6, .2, 1) .1s backwards; }
+.flourish .lf { fill: currentColor; transform-box: fill-box; transform-origin: 50% 50%; animation: leaf .5s cubic-bezier(.3, 1.5, .5, 1) backwards; animation-delay: calc(.35s + var(--i) * 70ms); }
+.flourish .lf.base { transform-origin: 50% 100%; }
+.flourish .twine { fill: none; stroke: var(--zest); stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 380; animation: tie .8s cubic-bezier(.4, 0, .2, 1) 1s backwards; }
+.flourish .twine.back { opacity: .7; animation-delay: .9s; }
+@keyframes draw { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+@keyframes tie { from { stroke-dashoffset: 380; } to { stroke-dashoffset: 0; } }
 @keyframes leaf { from { scale: 0; opacity: 0; } }
 .band .eyebrow, .band h1, .band .sub { animation: up .6s cubic-bezier(.2, .8, .2, 1) backwards; }
 .band h1 { animation-delay: .06s; } .band .sub { animation-delay: .14s; }

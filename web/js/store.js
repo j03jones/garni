@@ -1,7 +1,7 @@
 // The user's own changes (new recipes, edits to built-in ones, deletions) live in IndexedDB.
 // The built-in library is read-only data/recipes.json; the two are merged in app.js.
 // Record shapes: a full recipe record (see model.js toRecord), or {id, deleted: true}.
-const DB_NAME = 'sprig-user';
+const DB_NAME = 'sprig-user';   // the app's first name; kept so existing devices keep their recipes
 const STORE = 'recipes';
 
 let dbPromise = null;

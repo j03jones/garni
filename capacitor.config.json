@@ -1,6 +1,6 @@
 {
-  "appId": "com.jonesridgekitchen.sprig",
-  "appName": "Sprig",
+  "appId": "page.garni",
+  "appName": "Garni",
   "webDir": "web",
   "backgroundColor": "#faf8f3",
   "android": { "allowMixedContent": false },
