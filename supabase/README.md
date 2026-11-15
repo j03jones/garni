@@ -75,6 +75,11 @@ on the phone to about 200 KB before uploading. Existing projects run it once in 
   `claim_pack`, which needs Pro or that pack when the pack has a price. (The free packs picked from the
   built-in library live in `web/js/packs.js` and need no database.)
 
+`add_pack_builder.sql` (run after it) lets the administrator make and fill packs from the app
+(Admin tools › Open the pack builder). A pack's recipe must be in Garni's own words: the database refuses
+a straight copy of another website's recipe (one with a link to the original and no "Adapted from"
+credit) and link cards.
+
 ### Turning payments on (Stripe), later
 Nothing below is needed until there's a Stripe account; until then the Pro card says payments open soon.
 
