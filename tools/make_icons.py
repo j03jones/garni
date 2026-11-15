@@ -28,6 +28,12 @@ def boxed(inner: str, scale: float = 1.0) -> str:
             f'<g transform="translate(256 256) scale({scale}) translate(-256 -256)">{inner}</g></svg>')
 
 
+def silhouette() -> str:
+    """The drawing in solid white, filling the box, for Android's notification icon."""
+    white = re.sub(r'(fill|stroke)="#(?!fff")[0-9a-fA-F]{3,6}"', r'\1="#fff"', ART)
+    return boxed(white, 1.16)
+
+
 def splash(background: str) -> str:
     tile = (f'<g transform="translate(1166 1166)"><rect width="400" height="400" rx="96" fill="{GREEN}"/>'
             f'<g transform="scale(.78125)">{ART}</g></g>')
@@ -48,6 +54,7 @@ async def main() -> None:
         (res / "icon-only.png", 1024, SVG, "transparent"),
         (res / "icon-foreground.png", 1024, boxed(ART, 0.72), "transparent"),
         (res / "icon-background.png", 1024, boxed(f'<rect width="512" height="512" fill="{GREEN}"/>'), "transparent"),
+        (res / "notification.png", 384, silhouette(), "transparent"),
         (res / "splash.png", 2732, splash("#dff3e6"), "transparent"),
         (res / "splash-dark.png", 2732, splash("#15251c"), "transparent"),
     ]
@@ -83,6 +90,12 @@ def native() -> None:
 
     android = ROOT / "android/app/src/main/res"
     if android.is_dir():
+        # the notification icon: the drawing as a plain white silhouette (Android tints it), 24dp
+        stat = Image.open(res / "notification.png").convert("RGBA")
+        for name, px in [("mdpi", 24), ("hdpi", 36), ("xhdpi", 48), ("xxhdpi", 72), ("xxxhdpi", 96)]:
+            d = android / f"drawable-{name}"
+            d.mkdir(exist_ok=True)
+            stat.resize((px, px), Image.LANCZOS).save(d / "ic_stat_garni.png")
         for name, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
             d = android / f"mipmap-{name}"
             icon.resize((px, px), Image.LANCZOS).save(d / "ic_launcher.png")
