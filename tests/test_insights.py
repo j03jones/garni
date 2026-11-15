@@ -77,3 +77,25 @@ class Insights(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+COVERS = r"""
+import { COVERS, coverKey, coverSvg } from './web/js/covers.js';
+console.log(JSON.stringify({
+  keys: Object.keys(COVERS).length,
+  picks: [coverKey('All Season Apple Pie', 'Desserts'), coverKey('Chicken Noodle Soup', 'Poultry'), coverKey('Mystery Dish', 'Italian'),
+          coverKey('Something', 'Not a group'), coverKey('Grilled Salmon', 'Seafood')],
+  svg: coverSvg('nope').startsWith('<svg class="cover" viewBox="0 0 100 100"'),
+}));
+"""
+
+
+@unittest.skipUnless(shutil.which("node"), "needs Node")
+class Covers(unittest.TestCase):
+    def test_covers(self):
+        res = subprocess.run(["node", "--input-type=module", "-e", COVERS], cwd=ROOT, capture_output=True, text=True, timeout=60)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        o = json.loads(res.stdout)
+        self.assertGreaterEqual(o["keys"], 30)
+        self.assertEqual(o["picks"], ["pie", "soup", "pizza", "plate", "fish"])
+        self.assertTrue(o["svg"])

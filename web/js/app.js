@@ -394,7 +394,7 @@ const thumbObserver = 'IntersectionObserver' in window ? new IntersectionObserve
   }
 }, { rootMargin: '300px' }) : null;
 function thumb(r, big = false) {
-  const t = tile(r.categories, big);
+  const t = tile(r.categories, big, r.title);
   const path = photoOf(r);
   if (path && thumbObserver) { t.dataset.photo = path; thumbObserver.observe(t); }
   return t;
@@ -1117,7 +1117,7 @@ function viewRecipe(id, preset = null) {
         awakeBtn,
         !shared && starButton(r.id),
         !shared && canEdit(r) && h('a', { class: 'icon-btn', href: `#/edit/${r.id}`, 'aria-label': 'Edit recipe', title: 'Edit recipe' }, icon('edit'))),
-      h('div', { class: 'rhead' }, (() => { const t = tile(r.categories, true); t.style.viewTransitionName = 'rtile'; return t; })(), h('h1', null, r.title)),
+      h('div', { class: 'rhead' }, (() => { const t = tile(r.categories, true, r.title); t.style.viewTransitionName = 'rtile'; return t; })(), h('h1', null, r.title)),
       r.categories.length > 0 && h('div', { class: 'labels' }, r.categories.map((c) => h('span', { class: 'label' }, c))),
       (r._mins != null || r._veg) && h('p', { class: 'rmeta', title: 'Worked out from the recipe, so it is a guide only' },
         r._mins != null && h('span', null, icon('clock', { size: 16 }), `About ${formatMinutes(r._mins)}`),

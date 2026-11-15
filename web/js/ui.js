@@ -1,6 +1,7 @@
 // Small presentation helpers: icons, the emoji "photo" tile for each category, and starred recipes.
 import { SECTIONS } from './groups.js';
 import { haptic } from './native.js';
+import { coverKey, coverSvg } from './covers.js';
 
 const ICON_PATHS = {
   book: '<path d="M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M17 8h2v12h-2"/><path d="M9 9h5M9 12.5h4"/>',
@@ -71,14 +72,15 @@ export function primaryGroup(categories) {
   return known.find((c) => !BROAD.has(c)) || known[0] || '';
 }
 
-/** An emoji on a soft colour square: stands in for a photo (the recipes have none). */
-export function tile(categories, big = false) {
+/** An illustrated cover on a soft colour square: stands in for a photo (the built-in recipes have none).
+ *  The title can pick a more specific drawing than the category ("Apple Pie" gets the pie). */
+export function tile(categories, big = false, title = '') {
   const g = primaryGroup(categories);
   const el = document.createElement('span');
   el.className = big ? 'tile big' : 'tile';
   el.dataset.sec = hueIndex(g);
   el.setAttribute('aria-hidden', 'true');
-  el.textContent = emojiFor(g);
+  el.innerHTML = coverSvg(coverKey(title, g));
   return el;
 }
 
