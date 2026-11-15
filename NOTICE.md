@@ -29,5 +29,5 @@ available under the GPL. Everything after that, and all of Garni, is under the P
   from public Meal-Master archives and other contributors. They belong to their authors and are not
   licensed by this project.
 - **Third-party work.** `web/js/qr.js` follows Project Nayuki's QR Code generator reference implementation
-  (MIT License, Copyright (c) Project Nayuki). The fonts loaded by the app, Outfit and DM Sans, are under the
+  (MIT License, Copyright (c) Project Nayuki). The fonts bundled with the app in `web/fonts/`, Outfit and DM Sans, are under the
   SIL Open Font License 1.1. Capacitor, which wraps the web app for iOS and Android, is under the MIT License.

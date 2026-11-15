@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Garni</title>
+  <meta name="description" content="What Garni stores, where, and how to delete it.">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <style>
+    :root { --paper: #faf8f3; --ink: #17201b; --muted: #58625c; --leaf: #0b6e3c; --line: #e6e3da; --band: #dff3e6; color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) { :root { --paper: #0f1512; --ink: #edf1ec; --muted: #a3aea7; --leaf: #5fdc9b; --line: #2a362f; --band: #15251c; } }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { background: var(--band); padding: 2.2rem 1rem 1.6rem; }
+    header > div, main { max-width: 42rem; margin: 0 auto; }
+    h1, h2 { font-family: "Outfit", system-ui, sans-serif; line-height: 1.2; }
+    h1 { margin: .4rem 0 .3rem; font-size: 2.2rem; }
+    h2 { margin: 2rem 0 .4rem; font-size: 1.3rem; }
+    main { padding: .5rem 1rem 3rem; }
+    a { color: var(--leaf); }
+    .brand { display: inline-flex; align-items: center; gap: .55rem; font-family: "Outfit", sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--ink); text-decoration: none; }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .muted { color: var(--muted); }
+    li { margin: .25rem 0; }
+  </style>
+</head>
+<body>
+  <header><div>
+    <a class="brand" href="./"><img src="icons/icon-192.png" alt="">Garni</a>
+    <h1>Privacy</h1>
+    <p class="muted">Last updated 15 November 2026</p>
+  </div></header>
+  <main>
+    <p>Garni is a recipe app made by Joseph Jones (Jones Ridge Kitchen, Jonesboro, Arkansas). This page explains, in
+      plain words, what the app keeps about you, where it lives, and how to delete it.</p>
+
+    <h2>The short version</h2>
+    <ul>
+      <li>No ads, no tracking, no analytics, and nothing is ever sold.</li>
+      <li>You can use Garni without an account. Then everything stays on your own device.</li>
+      <li>If you make an account, your recipes and lists are stored so they follow you between devices,
+        and you can delete the account, and everything in it, at any time from Settings.</li>
+    </ul>
+
+    <h2>Without an account</h2>
+    <p>Your starred recipes, meal plan, shopping list, notes, timers, prices and any recipes you add are saved
+      only in your browser or in the app on your phone. They never leave the device unless you export a backup
+      or share a recipe yourself. Uninstalling the app or clearing the site's data deletes them.</p>
+
+    <h2>With an account</h2>
+    <p>When you sign up, Garni stores:</p>
+    <ul>
+      <li>your email address, the name you choose, and an encrypted (hashed) form of your password;</li>
+      <li>the recipes you save to your account, your starred recipes, ratings, notes, cook log, collections,
+        meal plan, shopping list, kitchen list and food prices;</li>
+      <li>photos you choose to add (dishes and a profile photo), shrunk on your phone before upload;</li>
+      <li>if you joined with an invite, which invite code you used; if you belong to a restaurant, which one.</li>
+    </ul>
+    <p>Recipes you share to the Community are shown to other signed-in people once approved, with your name.
+      Everything else is private to you. The administrator can see accounts and recipes in order to approve
+      Community recipes and help people, and nobody else can.</p>
+
+    <h2>Where it is kept, and who helps</h2>
+    <ul>
+      <li><strong>Supabase</strong> hosts the database, sign-in and photo storage (servers in the United States).</li>
+      <li><strong>Resend</strong> delivers Garni's emails: sign-up confirmations, password resets and invites.
+        It receives your email address and the message.</li>
+      <li><strong>GitHub Pages</strong> serves the website. Like any web host it sees your IP address when
+        the app's files are downloaded.</li>
+      <li>When you ask Garni to import a recipe from a web page, Garni's server fetches that one page for you.
+        The site sees Garni's server, not you.</li>
+    </ul>
+    <p>The fonts, icons and built-in recipes ship with the app, so using it does not contact anyone else.</p>
+
+    <h2>Requesting an invite</h2>
+    <p>If you ask for an invite, your name, email, what you do and your note are stored so the administrator can
+      reply, and the administrator gets an email about it. Requests that are dismissed can be removed on request.</p>
+
+    <h2>Deleting your data</h2>
+    <p>Signed in, go to <strong>Settings › Account › Delete my account</strong>. That permanently deletes your
+      account, your recipes (Community ones too), photos, stars, notes, meal plan and shopping list. Data kept
+      only on your device is deleted by uninstalling the app or clearing the site's data.</p>
+
+    <h2>Children</h2>
+    <p>Garni is not aimed at children under 13 and does not knowingly collect their information.</p>
+
+    <h2>Changes and questions</h2>
+    <p>If this policy changes, the date at the top changes too. Questions or requests:
+      <a href="https://jonesridgekitchen.com">jonesridgekitchen.com</a>.</p>
+  </main>
+</body>
+</html>

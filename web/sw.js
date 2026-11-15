@@ -4,9 +4,10 @@
 const VERSION = 'dev';
 const CACHE = `sprig-${VERSION}`;
 const ASSETS = [
-  './', 'index.html', 'style.css', 'manifest.webmanifest',
+  './', 'index.html', 'privacy.html', 'style.css', 'manifest.webmanifest',
   'js/app.js', 'js/units.js', 'js/unitdata.js', 'js/groups.js', 'js/linkdata.js', 'js/webimport.js', 'js/qr.js', 'js/model.js', 'js/store.js', 'js/ui.js', 'js/timers.js', 'js/config.js', 'js/cloud.js', 'js/account.js', 'js/photos.js', 'js/sharelink.js', 'js/applink.js', 'js/nutrition.js', 'js/nutridata.js', 'js/prices.js', 'js/costui.js', 'js/transfer.js', 'js/transferui.js', 'js/shopping.js', 'js/aisledata.js', 'js/planner.js', 'js/pantry.js', 'js/collections.js', 'js/cooklog.js',
   'data/recipes.json',
+  'fonts/fonts.css', 'fonts/dmsans-latin.woff2', 'fonts/dmsans-latin-ext.woff2', 'fonts/outfit-latin.woff2', 'fonts/outfit-latin-ext.woff2',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
@@ -21,7 +22,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('sprig-') && k !== CACHE && k !== 'sprig-fonts' && k !== 'sprig-more').map((k) => caches.delete(k))))
+      // (this also clears 'sprig-fonts', the copy of Google's fonts older versions kept; the fonts now ship with the app)
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('sprig-') && k !== CACHE && k !== 'sprig-more').map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -29,16 +31,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  if (req.method === 'GET' && (url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com')) {
-    // web fonts: serve the saved copy right away and refresh it quietly; kept across app versions
-    event.respondWith((async () => {
-      const cache = await caches.open('sprig-fonts');
-      const saved = await cache.match(req);
-      const fresh = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') cache.put(req, res.clone()); return res; }).catch(() => null);
-      return saved || (await fresh) || Response.error();
-    })());
-    return;
-  }
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/data/more.json') || url.pathname.includes('/data/more/')) {
     // the on-demand part of the library, kept across app versions. more.json says which set is

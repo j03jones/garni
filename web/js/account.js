@@ -1,6 +1,7 @@
 // Account card (sign in / create account / restaurant tools) and the admin screen.
 // Receives `ctx` from app.js so it can reuse the app's helpers without importing the whole app.
 import * as cloud from './cloud.js';
+import { appBase } from './applink.js';
 import { copyText } from './ui.js';
 import * as photos from './photos.js';
 import { qrSvg } from './qr.js';
@@ -182,6 +183,7 @@ export function accountCard(ctx) {
     const form = h('form', { class: 'stack', novalidate: true },
       mode === 'up' && name, email, pw.el, mode === 'up' && !ctx.joinCode && code,
       mode === 'up' && ctx.joinCode && h('p', { class: 'small okline' }, '✓ Invite code ', h('strong', null, ctx.joinCode), ' is filled in for you.'),
+      mode === 'up' && h('p', { class: 'muted small' }, 'Your email, name and recipes are kept private. ', h('a', { href: new URL('privacy.html', appBase()).href, target: '_blank', rel: 'noopener' }, 'How Garni handles your data'), '.'),
       go, msg, extra, mode === 'in' && h('p', { class: 'forgot-row' }, forgot));
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -19,6 +19,7 @@ import { addStars, buzz, confetti, copyText, emojiFor, greeting, icon, isStarred
 import { restoreTimers, timerChips } from './timers.js';
 import * as cloud from './cloud.js';
 import { accountCard, viewAdmin, viewJoin } from './account.js';
+import { appBase } from './applink.js';
 import * as photos from './photos.js';
 import { linkFor, packRecipe, unpackRecipe } from './sharelink.js';
 import { qrSvg } from './qr.js';
@@ -1878,6 +1879,7 @@ async function viewSettings() {
       stat('Recipes in library', lib.all.length.toLocaleString()),
       stat('Works offline', swReady ? 'Yes' : 'Not yet (open once while online)'),
       stat('App version', appVersion),
+      h('a', { class: 'linkbtn', href: new URL('privacy.html', appBase()).href, target: '_blank', rel: 'noopener' }, 'Privacy: what Garni stores and how to delete it'),
       stat('Your changes are saved on this device', store.persistent ? 'Yes' : 'No (private browsing?)'),
       stat('Protected from automatic cleanup', persisted ? 'Yes' : 'No'),
       !persisted && navigator.storage?.persist && h('button', { onclick: async () => { toast((await navigator.storage.persist()) ? 'Done' : 'The browser declined'); viewSettings(); } }, 'Ask the browser to keep my data'),
