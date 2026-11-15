@@ -50,8 +50,12 @@ each page header (the stems draw in, the herbs open, then the twine ties itself 
 
     python3 tools/make_icons.py   # redraw every icon and splash screen (web, Android, iOS) from icon.svg
 
-Also in the app: **cook mode** (one big step at a time, screen stays on), **timers** on any step that
-mentions a time, and small animations that switch off when the device asks for reduced motion.
+Also in the app: **cook mode** (one big step at a time, screen stays on, steps read aloud, voice commands),
+**timers** on any step that mentions a time, and motion that switches off when the device asks for reduced
+motion: pages slide forward and back (`web/js/motion.js`), a recipe's tile flies into its page, the title
+shrinks into a bar as you scroll, dialogs are bottom sheets on phones (swipe down to close), shopping-list
+rows swipe (right to tick, left to remove), pull down to refresh, and the iPhone app's edge swipe goes back.
+`tools/make_icons.py` also makes the iPhone's dark and tinted icons and Android's themed icon.
 
 ## Accounts
 

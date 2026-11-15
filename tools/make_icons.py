@@ -28,10 +28,20 @@ def boxed(inner: str, scale: float = 1.0) -> str:
             f'<g transform="translate(256 256) scale({scale}) translate(-256 -256)">{inner}</g></svg>')
 
 
+def white() -> str:
+    """The drawing in solid white."""
+    return re.sub(r'(fill|stroke)="#(?!fff")[0-9a-fA-F]{3,6}"', r'\1="#fff"', ART)
+
+
+def grey() -> str:
+    """The drawing in greys, for iOS's tinted icon (the twine a shade darker so the g still reads)."""
+    out = re.sub(r'(fill|stroke)="#(?:ffb38a|e8946a)"', r'\1="#b8b8b8"', ART)
+    return re.sub(r'(fill|stroke)="#18a058"', r'\1="#9a9a9a"', out)
+
+
 def silhouette() -> str:
     """The drawing in solid white, filling the box, for Android's notification icon."""
-    white = re.sub(r'(fill|stroke)="#(?!fff")[0-9a-fA-F]{3,6}"', r'\1="#fff"', ART)
-    return boxed(white, 1.16)
+    return boxed(white(), 1.16)
 
 
 def splash(background: str) -> str:
@@ -55,6 +65,11 @@ async def main() -> None:
         (res / "icon-foreground.png", 1024, boxed(ART, 0.72), "transparent"),
         (res / "icon-background.png", 1024, boxed(f'<rect width="512" height="512" fill="{GREEN}"/>'), "transparent"),
         (res / "notification.png", 384, silhouette(), "transparent"),
+        # iOS 18's dark and tinted home-screen icons: the drawing with no background (iOS adds its own)
+        (res / "icon-dark.png", 1024, boxed(ART, 0.9), "transparent"),
+        (res / "icon-tinted.png", 1024, boxed(grey(), 0.9), "transparent"),
+        # Android 13's themed icon: a one-colour layer the phone tints to match the wallpaper
+        (res / "icon-monochrome.png", 1024, boxed(white(), 0.62), "transparent"),
         (res / "splash.png", 2732, splash("#dff3e6"), "transparent"),
         (res / "splash-dark.png", 2732, splash("#15251c"), "transparent"),
     ]
@@ -109,6 +124,16 @@ def native() -> None:
             fore.resize((fpx, fpx), Image.LANCZOS).save(d / "ic_launcher_foreground.png")
         (android / "values/ic_launcher_background.xml").write_text(
             f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">{GREEN.upper()}</color>\n</resources>\n')
+        mono = Image.open(res / "icon-monochrome.png").convert("RGBA")
+        for name, px in [("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)]:
+            fpx = px * 108 // 48
+            mono.resize((fpx, fpx), Image.LANCZOS).save(android / f"mipmap-{name}" / "ic_launcher_monochrome.png")
+        for xml in ("ic_launcher.xml", "ic_launcher_round.xml"):
+            (android / "mipmap-anydpi-v26" / xml).write_text(
+                '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                '    <background android:drawable="@color/ic_launcher_background"/>\n'
+                '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n'
+                '    <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>\n</adaptive-icon>\n')
         for f in sorted(android.glob("drawable*/splash.png")):
             w, h = Image.open(f).size
             splash(w, h).save(f)
@@ -117,6 +142,16 @@ def native() -> None:
     ios = ROOT / "ios/App/App/Assets.xcassets"
     if ios.is_dir():
         icon.convert("RGB").save(ios / "AppIcon.appiconset/AppIcon-512@2x.png")      # iOS icons must have no transparency
+        Image.open(res / "icon-dark.png").save(ios / "AppIcon.appiconset/AppIcon-dark.png")
+        Image.open(res / "icon-tinted.png").convert("LA").save(ios / "AppIcon.appiconset/AppIcon-tinted.png")
+        import json
+        (ios / "AppIcon.appiconset/Contents.json").write_text(json.dumps({"images": [
+            {"filename": "AppIcon-512@2x.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+            {"appearances": [{"appearance": "luminosity", "value": "dark"}], "filename": "AppIcon-dark.png",
+             "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+            {"appearances": [{"appearance": "luminosity", "value": "tinted"}], "filename": "AppIcon-tinted.png",
+             "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+        ], "info": {"author": "xcode", "version": 1}}, indent=2) + "\n")
         for f in sorted((ios / "Splash.imageset").glob("*.png")):
             light.save(f)
         print("wrote iOS icon and splash screens")
