@@ -42,6 +42,7 @@ export function homeFeed(ctx) {
     shelf('Your stars', byId(ctx.starIds()).slice(0, PER_SHELF), () => { location.hash = '#/starred'; }),
     shelf('Ready in 30 minutes', pick(library.filter((r) => r._mins != null && r._mins <= 30 && meal(r)), PER_SHELF, seed), () => ctx.filter('quick')),
     shelf(season.title, pick(library.filter((r) => meal(r) && usesAny(r, season.words)), PER_SHELF, seed + 1)),
+    ctx.packShelf?.(),
     shelf('Meat-free mains', pick(library.filter((r) => r._veg && r.categories.some((c) => MAINS.has(c))), PER_SHELF, seed + 2), () => ctx.filter('veg')),
     shelf('Something sweet', pick(library.filter((r) => r.categories.some((c) => SWEET.has(c))), PER_SHELF, seed + 3)),
     shelf('New in Community', community.slice(0, PER_SHELF)));

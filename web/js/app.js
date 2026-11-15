@@ -22,6 +22,8 @@ import { canListen, canShare, canSpeak, handleBackButton, listen, platform, shar
 import { compactTitle, edgeSwipeBack, flyingTiles, pullToRefresh, swipeableSheets, transition } from './motion.js';
 import { dietOf, estimateMinutes, formatMinutes, sortKey } from './insights.js';
 import { homeFeed, metaLine } from './home.js';
+import { packShelf, viewPack, viewPacks } from './packs.js';
+import { proCard } from './pro.js';
 import { pickDay, useApp, viewPantry, viewPlan, viewShop } from './planning.js';
 import { ingredientsIn, splitSteps, voiceCommand } from './steps.js';
 import { firstLink, fromShared, fromText, readPhoto } from './getin.js';
@@ -47,6 +49,7 @@ function h(tag, attrs, ...kids) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
+    else if (k === 'html') el.innerHTML = v;      // the app's own markup only (cover drawings), never text from people
     else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
     else if (['value', 'checked', 'disabled', 'selected'].includes(k)) props[k] = v;
     else el.setAttribute(k, v === true ? '' : v);
@@ -229,6 +232,7 @@ async function refreshCloud() {
   if (!cloud.isSignedIn()) { clearCloud(); return; }
   try {
     const [me, rows] = await Promise.all([cloud.loadMe(), cloud.listRecipes()]);
+    if (me) { try { me.products = await cloud.myProducts(); } catch { me.products = lib.me?.products || []; } }
     lib.me = me; lib.cloud = rows;
     try { lib.avatars = Object.fromEntries((await cloud.communityAvatars()).map((a) => [a.id, a.avatar])); } catch { /* keep the old ones */ }
     saveCloudCache();
@@ -628,7 +632,7 @@ function viewList(starredOnly = false) {
     '🌿 Vegetarian');
   const quickRow = h('div', { class: 'chips quick', role: 'group', 'aria-label': 'Filters' }, quickBtn, vegBtn,
     h('span', { class: 'muted small hint' }, 'Times and labels are worked out from each recipe, so check before you rely on them.'));
-  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id),
+  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, packShelf: () => packShelf(ctx), recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id),
     filter: (kind) => { listState[kind] = true; listState.shown = PAGE; chipState(); paint(); allHead.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
   const allHead = h('h2', { class: 'allhead' }, 'Browse all recipes');
 
@@ -1758,6 +1762,7 @@ async function viewSettings() {
   fill($app, 
     pageHead('Settings & backup'),
     accountCard(ctx),
+    proCard(ctx),
     h('h2', null, 'This device'),
     h('section', { class: 'card stack' },
       h('strong', null, 'Status'),
@@ -1834,19 +1839,21 @@ function route() {
   if (kind === 'admin') return viewAdmin(ctx);
   if (kind === 'join') return viewJoin(ctx, id);
   if (kind === 'starred') return viewList(true);
-  if (kind === 'shop') return viewShop();
+  if (kind === 'shop') return viewShop(id || '');
   if (kind === 'plan') return viewPlan();
   if (kind === 'pantry') return viewPantry();
   if (kind === 'c' && id) return viewCollection(id);
   if (kind === 'cooked') return viewCooked();
   if (kind === 'prices') return viewPrices();
+  if (kind === 'packs') return viewPacks(ctx);
+  if (kind === 'pack' && id) return viewPack(ctx, id);
   if (kind === 'transfer') return viewTransfer();
   return viewList();
 }
 
 const ctx = {
   h, fill, toast, icon, lib, $app, setView, goBack, refreshCloud, clearCloud, confirmDialog, infoDialog, pageHead,
-  rerender: () => route(), joinCode: '',
+  rerender: () => route(), joinCode: '', thumb, metaLine, buzz,
 };
 
 // the planning screens (planning.js) use these app.js helpers

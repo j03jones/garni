@@ -365,3 +365,16 @@ export const createHousehold = (name) => authed('/rest/v1/rpc/create_household',
 export const joinHousehold = (code) => authed('/rest/v1/rpc/join_household', { method: 'POST', body: { p_code: code } });
 export const leaveHousehold = () => authed('/rest/v1/rpc/leave_household', { method: 'POST', body: {} });
 export const saveHouseholdList = (list, at) => authed('/rest/v1/rpc/save_household_list', { method: 'POST', body: { p_list: list, p_at: at } });
+
+// ------------------------------------------------------------------ Garni Pro, purchases and recipe packs
+/** What the signed-in person has bought: ['pro', 'pack:weeknights', ...] (refunded ones left out). */
+export async function myProducts() {
+  const rows = await authed('/rest/v1/entitlements?select=product,revoked_at');
+  return (Array.isArray(rows) ? rows : []).filter((r) => !r.revoked_at).map((r) => r.product);
+}
+export const adminGrant = (email, product) => authed('/rest/v1/rpc/admin_grant', { method: 'POST', body: { p_email: email, p_product: product } });
+export const adminRevoke = (email, product) => authed('/rest/v1/rpc/admin_revoke', { method: 'POST', body: { p_email: email, p_product: product } });
+/** Recipe packs kept on the server (published ones; works signed out). */
+export const listPacks = () => call('/rest/v1/packs?select=id,title,description,price_cents,sort&order=sort,title', { method: 'GET' });
+export const packPreview = (id) => call('/rest/v1/rpc/pack_preview', { method: 'POST', body: { p_pack: id } });
+export const claimPack = (id) => authed('/rest/v1/rpc/claim_pack', { method: 'POST', body: { p_pack: id } });

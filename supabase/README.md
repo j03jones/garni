@@ -61,8 +61,38 @@ the person who took them, and profile photos are visible to anyone signed in. Th
 on the phone to about 200 KB before uploading. Existing projects run it once in the SQL Editor
 (safe to run again). New projects get it from `schema.sql`.
 
-## Not done yet
-Stripe billing (which would set `restaurants.subscription_status`) is not connected.
+## Garni Pro, tips and starter packs
+`add_pro_and_packs.sql` (safe to run again; new projects get it from `schema.sql`) adds:
+
+- `entitlements`: what each account has bought (`pro`, `supporter`, or `pack:<id>`). People can read
+  their own; nobody writes to it from the app. Rows come from the `stripe-webhook` function, or from
+  **Admin tools → Purchases** (`admin_grant` / `admin_revoke`), for testing and gifts. Taking something back
+  sets `revoked_at` rather than deleting the row.
+- `is_pro()`, and `is_paid()` now also counts Pro, so Pro lifts the 25-recipe free limit. Recipes copied in
+  from a pack don't count toward that limit.
+- `packs` and `pack_recipes`: starter packs kept on the server. Anyone can see a published pack and its
+  recipe titles (`pack_preview`); the recipes themselves are only copied into your private recipes by
+  `claim_pack`, which needs Pro or that pack when the pack has a price. (The free packs picked from the
+  built-in library live in `web/js/packs.js` and need no database.)
+
+### Turning payments on (Stripe), later
+Nothing below is needed until there's a Stripe account; until then the Pro card says payments open soon.
+
+1. In Stripe, make one-time Payment Links: Garni Pro ($29) and, if you like, tips ($3, $5, $10). On each,
+   add metadata `product` = `pro` (or `supporter` for tips), and set the after-payment page to
+   `https://garni.page/#/settings`.
+2. Paste each link into `PAYMENT_LINKS` in `web/js/pro.js`. The app adds the account id
+   (`client_reference_id`) and email, so the purchase lands on the right account.
+3. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`
+   (Stripe signs its calls instead; the function checks the `Stripe-Signature` header).
+4. In Stripe → Developers → Webhooks, add `https://<project>.supabase.co/functions/v1/stripe-webhook`
+   for `checkout.session.completed` and `charge.refunded`, then save its signing secret:
+   `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`
+   Optional: `STRIPE_PRODUCTS='{"plink_...":"pro"}'` maps Payment Link ids to products instead of metadata.
+5. A refund marks the purchase revoked. The phone apps never show Buy buttons (the stores want their own
+   in-app purchase); Pro bought on the web still counts in them.
+
+Restaurant billing (`restaurants.subscription_status`) is still set by hand in Admin tools.
 
 ## Who can see what
 Passwords are stored hashed by Supabase and never visible to anyone. Every table has row-level security, so

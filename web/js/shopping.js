@@ -246,3 +246,11 @@ export function merge3(base, local, remote) {
   return clean({ items, extras, done: [...done] });
 }
 export const sameList = (a, b) => JSON.stringify(clean(a)) === JSON.stringify(clean(b));
+
+/** Lines as a plain checklist, one thing per line ("2 cups Flour"): pasted into Apple Reminders or a Google
+ *  Keep checklist, each line becomes its own item. */
+export const toChecklist = (lines) => lines.map((l) => {
+  const amt = l.amounts.join(' + ');
+  const notes = l.notes.length ? ` (${l.notes.join(', ')})` : '';
+  return `${amt ? `${amt} ` : ''}${l.name}${notes}`.trim();
+}).join('\n');

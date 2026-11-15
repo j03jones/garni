@@ -125,8 +125,8 @@ export function viewPlan() {
           h('button', { class: 'primary', type: 'button', disabled: !planned.length, onclick: () => {
             for (const [id, f] of planned) shop.add(id, f);   // the amount the plan says, so pressing twice doesn't double it
             toast(`${planned.length} ${planned.length === 1 ? 'recipe' : 'recipes'} added to the shopping list`);
-            location.hash = '#/shop';
-          } }, 'Add this week to the shopping list'),
+            location.hash = '#/shop/send';                     // the list, with "Send your list" open
+          } }, icon('cart', { size: 18 }), 'Build grocery cart'),
           h('button', { type: 'button', disabled: !dates.some((d) => plan.days[d]), onclick: async () => {
             if (await confirmDialog('Clear every meal planned for this week?', 'Clear week', true)) { planner.clearDates(dates); paint(); }
           } }, 'Clear week')),
@@ -146,7 +146,34 @@ const SKIP_HAVE_KEY = 'recipelib.shop.skiphave';
 const skipHave = () => { try { return localStorage.getItem(SKIP_HAVE_KEY) !== '0'; } catch { return true; } };
 const setSkipHave = (on) => { try { localStorage.setItem(SKIP_HAVE_KEY, on ? '1' : '0'); } catch { /* private mode */ } };
 
-export function viewShop() {
+/** "Send your list": the shopping list to Reminders, Keep or anywhere else. (A grocery service such as
+ *  Instacart slots in here as another option once there is an Instacart developer account.) */
+function sendSheet(left, fullText) {
+  const checklist = shop.toChecklist(left);
+  const done = (msg) => { toast(msg); dlg.close(); };
+  const dlg = h('dialog', { class: 'sendsheet', 'aria-labelledby': 'send-title' },
+    h('h2', { id: 'send-title' }, 'Send your list'),
+    h('p', { class: 'muted small' }, `${left.length} ${left.length === 1 ? 'thing' : 'things'} still to get.`),
+    h('div', { class: 'sendopt' },
+      h('strong', null, 'Apple Reminders or Google Keep'),
+      h('span', { class: 'muted small' }, 'One item per line: paste it into a Reminders list or a Keep checklist and each line becomes its own item to tick off.'),
+      h('div', { class: 'row grow' },
+        canShare() && h('button', { type: 'button', class: 'primary', onclick: async () => { await share({ title: 'Shopping list', text: checklist }); dlg.close(); } }, 'Share checklist'),
+        h('button', { type: 'button', onclick: async () => done(await copyText(checklist) ? 'Checklist copied: paste it into Reminders or Keep' : 'Could not copy on this browser') }, 'Copy checklist'))),
+    h('div', { class: 'sendopt' },
+      h('strong', null, 'The full list'),
+      h('span', { class: 'muted small' }, 'With the recipes it’s for, sorted by aisle: for a message or a note.'),
+      h('div', { class: 'row grow' },
+        canShare() && h('button', { type: 'button', onclick: async () => { await share({ title: 'Shopping list', text: fullText() }); dlg.close(); } }, 'Share'),
+        h('button', { type: 'button', onclick: async () => done(await copyText(fullText()) ? 'Shopping list copied' : 'Could not copy on this browser') }, 'Copy'),
+        h('button', { type: 'button', onclick: () => { dlg.close(); setTimeout(() => window.print(), 100); } }, 'Print'))),
+    h('div', { class: 'row' }, h('button', { type: 'button', onclick: () => dlg.close() }, 'Done')));
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
+}
+
+export function viewShop(open = '') {
   setView('shop', 'plan');
   const body = h('div');
   const extraIn = h('input', { type: 'text', class: 'full', maxlength: '120', placeholder: 'Add something else: paper towels, coffee…', 'aria-label': 'Add an item' });
@@ -241,8 +268,7 @@ export function viewShop() {
         h('ul', { class: 'havelist' }, have.map((l) => h('li', null, l.name, (l.amounts.length > 0 || l.notes.length > 0) && h('span', { class: 'muted' }, ` ${[...l.amounts, ...l.notes].join(' + ')}`))))),
       h('section', { class: 'tools stack' },
         h('div', { class: 'row grow' },
-          h('button', { type: 'button', onclick: async () => toast(await copyText(text()) ? 'Shopping list copied' : 'Could not copy on this browser') }, 'Copy'),
-          canShare() && h('button', { type: 'button', onclick: () => share({ title: 'Shopping list', text: text() }) }, 'Share'),
+          h('button', { type: 'button', class: 'primary', disabled: !left.length, onclick: () => sendSheet(left, text) }, 'Send your list…'),
           h('button', { type: 'button', onclick: () => window.print() }, 'Print'),
           h('button', { type: 'button', onclick: async () => {
             if (await confirmDialog('Clear the whole shopping list?', 'Clear list', true)) { shop.clear(); paint(); }
@@ -293,6 +319,11 @@ export function viewShop() {
   fill($app, pageHead('Shopping list', 'Everything for the recipes you picked, in one list'), planSeg('shop'), sharedNote, extraForm, body, hhCard);
   paint();
   paintHousehold();
+  if (open === 'send') {
+    history.replaceState(history.state, '', '#/shop');
+    const list = shop.load();
+    if (list.items.length || list.extras.length) setTimeout(() => body.querySelector('.tools .primary')?.click(), 50);
+  }
   if (lib.me) syncHousehold().then(paintHousehold);
   window.scrollTo(0, 0);
 }

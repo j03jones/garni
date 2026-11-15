@@ -6,6 +6,7 @@ import { appBase } from './applink.js';
 import { copyText } from './ui.js';
 import * as photos from './photos.js';
 import { qrSvg } from './qr.js';
+import { adminPurchases } from './pro.js';
 
 /** What the admin needs to check on a submission that credits someone else: the original link. */
 function reviewCredit(h, body) {
@@ -640,6 +641,8 @@ export async function viewAdmin(ctx) {
       h('p', { class: 'muted small' }, 'Good for a class: show the QR code on screen and everyone scans it.'),
       h('div', { class: 'row' }, usesRow, linkBtn),
       inviteOut),
+    h('h2', null, 'Purchases'),
+    adminPurchases(ctx),
     h('h2', null, 'Invite codes'),
     codes.el,
     h('h2', null, 'People'),

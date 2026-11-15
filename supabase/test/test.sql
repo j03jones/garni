@@ -389,6 +389,46 @@ set role anon;
 select t.denied('signed-out visitors cannot make a household', $$ select public.create_household('X') $$);
 reset role;
 
+-- Garni Pro, purchases and recipe packs
+insert into public.packs (id, title, price_cents, published) values ('weeknights', 'Weeknights', 900, true), ('freebies', 'Freebies', 0, true), ('draft', 'Draft', 0, false);
+insert into public.pack_recipes (pack_id, title, body) values ('weeknights', 'Quick Pasta', '{}'), ('weeknights', 'Fast Fish', '{}'), ('freebies', 'Free Soup', '{}');
+select t.login(:'s2'); set role authenticated;
+select t.expect('people see published packs only', t.n($$ select count(*) from public.packs $$) = 2);
+select t.expect('pack contents are hidden', t.n($$ select count(*) from public.pack_recipes $$) = 0);
+select t.expect('a pack preview lists its titles', t.n($$ select count(*) from public.pack_preview('weeknights') $$) = 2);
+select t.denied('a paid pack needs unlocking', $$ select public.claim_pack('weeknights') $$);
+select t.denied('an unpublished pack cannot be claimed', $$ select public.claim_pack('draft') $$);
+select t.expect('a free pack can be claimed', (select public.claim_pack('freebies')) = 1);
+select t.expect('claiming twice adds nothing', (select public.claim_pack('freebies')) = 0);
+select t.denied('people cannot grant themselves Pro', format($$ select public.admin_grant(%L, 'pro') $$, 's2@x.test'));
+select t.denied('people cannot write purchases directly', format($$ insert into public.entitlements (user_id, product) values (%L, 'pro') $$, :'s2'));
+insert into public.recipes (owner_id, scope, title, body, pack_id) values (:'s2', 'private', 'Sneaky', '{}', 'freebies');
+select t.expect('a hand-made recipe never counts as a pack copy', (select pack_id is null from public.recipes where title = 'Sneaky'));
+reset role;
+select t.login(:'admin_id'); set role authenticated;
+select public.admin_grant('s2@x.test', 'pro');
+reset role;
+select t.login(:'s2'); set role authenticated;
+select t.expect('people can see their own purchases', t.n($$ select count(*) from public.entitlements where product = 'pro' $$) = 1);
+select t.expect('Pro opens paid packs', (select public.claim_pack('weeknights')) = 2);
+select t.expect('pack copies are private recipes', t.n($$ select count(*) from public.recipes where pack_id = 'weeknights' and scope = 'private' $$) = 2);
+reset role;
+select t.login(:'s1'); set role authenticated;
+select t.expect('nobody sees someone else''s purchases', t.n($$ select count(*) from public.entitlements $$) = 0);
+reset role;
+select t.expect('Pro counts as paid', (select public.is_paid(:'s2')));
+select t.login(:'admin_id'); set role authenticated;
+select public.admin_revoke('s2@x.test', 'pro');
+reset role;
+select t.expect('taking Pro back ends it', not (select public.is_paid(:'s2')));
+-- the free limit ignores pack copies
+update public.app_settings set free_recipe_limit = 1;
+select t.login(:'s2'); set role authenticated;
+select t.denied('the free limit still applies to hand-made recipes', $$ insert into public.recipes (owner_id, scope, title, body) values (auth.uid(), 'private', 'One too many', '{}') $$);
+reset role;
+update public.app_settings set free_recipe_limit = 25;
+delete from public.recipes where owner_id = :'s2' and title in ('Sneaky', 'Free Soup', 'Quick Pasta', 'Fast Fish');
+
 -- ---- invite links and invite requests ----------------------------------------
 select t.login(:'admin_id'); set role authenticated;
 select public.create_invite('student', null, 'staff', 1, 30) as link_code \gset

@@ -57,6 +57,8 @@
       <li>if you joined with an invite, which invite code you used; if you belong to a restaurant, which one.</li>
       <li>if you share a shopping list with your household, the household's name, its list, and who is in it
         (the others see your first name).</li>
+      <li>if you buy Garni Pro or leave a tip, what you bought, when, and the amount, so it works on all your
+        devices. Garni never sees or stores your card details.</li>
     </ul>
     <p>Recipes you share to the Community are shown to other signed-in people once approved, with your name.
       Everything else is private to you. The administrator can see accounts and recipes in order to approve
@@ -67,6 +69,8 @@
       <li><strong>Supabase</strong> hosts the database, sign-in and photo storage (servers in the United States).</li>
       <li><strong>Resend</strong> delivers Garni's emails: sign-up confirmations, password resets and invites.
         It receives your email address and the message.</li>
+      <li><strong>Stripe</strong> handles payments on the website, if you choose to buy Garni Pro or leave a tip.
+        You pay on Stripe's own page; Stripe tells Garni which account bought what.</li>
       <li><strong>GitHub Pages</strong> serves the website. Like any web host it sees your IP address when
         the app's files are downloaded.</li>
       <li>When you ask Garni to import a recipe from a web page, Garni's server fetches that one page for you.

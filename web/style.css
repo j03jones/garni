@@ -793,3 +793,22 @@ li.swipe > * { position: relative; z-index: 1; }
 .household { margin-top: 1.4rem; }
 .household summary { cursor: pointer; font-weight: 700; min-height: var(--tap); display: flex; align-items: center; }
 .household .code { font-family: var(--display); letter-spacing: .12em; font-size: 1.3rem; }
+
+/* starter packs and Garni Pro */
+.packgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.6rem, 1fr)); gap: 1.1rem .8rem; margin-top: .6rem; }
+.packcard .fm { color: var(--leaf); font-weight: 600; }
+.packhead { display: flex; gap: 1rem; align-items: center; margin: .2rem 0 1rem; }
+.packhead p { margin: 0; }
+.packhead .packcover { width: 5.5rem; height: 5.5rem; flex: none; }
+.packhead .packcover svg.cover { width: 82%; height: 82%; }
+.packlist { margin-top: .4rem; }
+.procard h2 { margin: 0; font-size: 1.2rem; }
+.procard.pro { border: 2px solid var(--leaf); }
+.perks { margin: 0; padding-left: 1.2rem; }
+.perks li { margin: .25rem 0; }
+.perks li::marker { content: "✓  "; color: var(--leaf); font-weight: 700; }
+
+/* "Send your list" */
+.sendsheet { width: min(92vw, 460px); }
+.sendopt { display: flex; flex-direction: column; gap: .35rem; padding: .9rem 0; border-top: 1px solid var(--line); }
+.sendopt .row { margin-top: .3rem; }

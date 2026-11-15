@@ -45,6 +45,12 @@ class Fake:
         self.open_signup = False
         self.sent = []       # emailed invites
         self.households = {}  # id -> dict(name, code, list, list_at, members=[user ids])
+        self.entitlements = []   # dict(user_id, product, revoked_at)
+        self.packs = {"fall-suppers": dict(id="fall-suppers", title="Fall Suppers", description="Three cosy dinners.", price_cents=900, published=True, sort=1)}
+        self.pack_recipes = {"fall-suppers": [dict(title=t, categories=["Main Dishes"]) for t in ("Cider Pork", "Squash Risotto", "Apple Crumble")]}
+
+    def has(self, uid, product):
+        return any(e["user_id"] == uid and e["product"] == product and not e["revoked_at"] for e in self.entitlements)
 
     def add_user(self, email, pw, name, role):
         uid = str(uuid.uuid4())
@@ -130,6 +136,10 @@ class Fake:
             return await route.fulfill(status=204, headers=CORS)
         if path == "/auth/v1/logout":
             return await ok({})
+        if path == "/rest/v1/packs":
+            return await ok(sorted([p for p in self.packs.values() if p["published"]], key=lambda p: (p["sort"], p["title"])))
+        if path == "/rest/v1/rpc/pack_preview":
+            return await ok(self.pack_recipes.get(body["p_pack"], []))
         if user is None:
             return await ok({"message": "JWT expired"}, 401)
         if path == "/auth/v1/user" and req.method == "PUT":
@@ -158,7 +168,7 @@ class Fake:
                 return await ok(self.visible(user))
             if req.method == "POST":
                 private = [r for r in self.recipes.values() if r["owner_id"] == user["id"] and r["scope"] == "private"]
-                if user["role"] != "admin" and len(private) >= 2 and not any(m["user_id"] == user["id"] for m in self.members):
+                if user["role"] != "admin" and len(private) >= 2 and not any(m["user_id"] == user["id"] for m in self.members) and not self.has(user["id"], "pro"):
                     return await ok({"message": "Free plan limit reached (2 recipes)"}, 400)
                 row = {"id": str(uuid.uuid4()), "scope": "private", "status": "approved", "restaurant_id": None, "source_recipe_id": None, "author_name": None, "review_note": None, **body}
                 self.recipes[row["id"]] = row
@@ -246,6 +256,36 @@ class Fake:
             if path.endswith("/save_household_list"):
                 mine["list"] = body["p_list"]; mine["list_at"] = max(mine["list_at"] + 1, body["p_at"])
                 return await route.fulfill(status=204, headers=CORS)
+        if path == "/rest/v1/entitlements":
+            return await ok([dict(product=e["product"], revoked_at=e["revoked_at"]) for e in self.entitlements if e["user_id"] == user["id"]])
+        if path in ("/rest/v1/rpc/admin_grant", "/rest/v1/rpc/admin_revoke"):
+            if user["role"] != "admin":
+                return await ok({"message": "Only the administrator can do that."}, 400)
+            who = self.users.get(body["p_email"].lower())
+            if not who:
+                return await ok({"message": "No account uses that email."}, 400)
+            if path.endswith("grant"):
+                self.entitlements.append(dict(user_id=who["id"], product=body["p_product"], revoked_at=None))
+            else:
+                for e in self.entitlements:
+                    if e["user_id"] == who["id"] and e["product"] == body["p_product"]:
+                        e["revoked_at"] = "2026-11-15T10:00:00Z"
+            return await route.fulfill(status=204, headers=CORS)
+        if path == "/rest/v1/rpc/claim_pack":
+            pk = self.packs.get(body["p_pack"])
+            if pk["price_cents"] > 0 and not (self.has(user["id"], "pro") or self.has(user["id"], f"pack:{pk['id']}")):
+                return await ok({"message": "This pack is included with Garni Pro."}, 400)
+            mine = {r["title"] for r in self.recipes.values() if r["owner_id"] == user["id"]}
+            n = 0
+            for t in self.pack_recipes[pk["id"]]:
+                if t["title"] in mine:
+                    continue
+                rid = str(uuid.uuid4())
+                self.recipes[rid] = {"id": rid, "owner_id": user["id"], "scope": "private", "status": "approved", "restaurant_id": None,
+                                     "source_recipe_id": None, "author_name": "Garni", "review_note": None, "pack_id": pk["id"],
+                                     "title": t["title"], "body": {"title": t["title"], "categories": t["categories"], "ingredients": [], "steps": []}}
+                n += 1
+            return await ok(n)
         if path == "/rest/v1/rpc/delete_my_account":
             if user["role"] == "admin":
                 return await ok({"message": "The administrator account cannot be deleted from the app."}, 400)
@@ -673,6 +713,31 @@ async def run():
         await inv.goto(URL + "#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired")
         await inv.reload()
         check("an expired email link is explained", "expired or was already used" in await close_dialog(inv, "didn’t work"))
+
+        # ---- Garni Pro (granted by the admin) and a paid starter pack
+        await st.goto(URL + "#/pack/fall-suppers")
+        await st.wait_for_selector(".packlist li")
+        check("a paid pack shows its recipe titles", await st.locator(".packlist li").count() == 3)
+        check("without Pro it is offered, with no Buy button yet", "included with Garni Pro" in await st.inner_text(".procard")
+              and await st.locator(".procard a.btnlink").count() == 0)
+        await admin.goto(URL + "#/admin")
+        await admin.wait_for_selector("input[aria-label='Email for Pro']")
+        await admin.fill("input[aria-label='Email for Pro']", "sam@example.com")
+        await admin.click("button:has-text('Grant')")
+        await admin.wait_for_selector("#toast:has-text('Granted')")
+        check("the admin can grant Pro", fake.has(fake.users["sam@example.com"]["id"], "pro"))
+        await st.goto(URL + "#/settings")
+        await st.reload()
+        await st.wait_for_selector(".procard:has-text('You have Garni Pro')", timeout=8000)
+        check("Settings shows Pro once granted", "You have Garni Pro" in await st.inner_text(".procard"))
+        await st.goto(URL + "#/pack/fall-suppers")
+        await st.click("button:has-text('Add to my recipes')")
+        await st.wait_for_selector("#toast:has-text('recipes added')")
+        check("a Pro member can add a paid pack", sum(1 for r in fake.recipes.values() if r.get("pack_id") == "fall-suppers") == 3)
+        await admin.fill("input[aria-label='Email for Pro']", "sam@example.com")
+        await admin.click("button:has-text('Take back')")
+        await admin.wait_for_selector("#toast:has-text('Taken back')")
+        check("the admin can take Pro back", not fake.has(fake.users["sam@example.com"]["id"], "pro"))
 
         # ---- withdraw + sign out
         await st.goto(URL + "#/")
