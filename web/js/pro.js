@@ -53,6 +53,8 @@ export function proCard(ctx) {
       h('p', { class: 'muted small' }, 'Thank you for supporting Garni. Here’s what’s yours:'),
       h('ul', { class: 'perks' }, PRO_PERKS.map((p) => h('li', null, p))));
   }
+  // the phone apps don't advertise buying on the web (App Store and Play rules); the card returns with in-app purchase
+  if (isNative()) return null;
   const tips = ['tip3', 'tip5', 'tip10'].filter(canBuy);
   return h('section', { class: 'card stack procard' },
     h('h2', null, 'Support Garni / Unlock Pro'),

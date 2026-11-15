@@ -378,3 +378,19 @@ export const adminRevoke = (email, product) => authed('/rest/v1/rpc/admin_revoke
 export const listPacks = () => call('/rest/v1/packs?select=id,title,description,price_cents,sort&order=sort,title', { method: 'GET' });
 export const packPreview = (id) => call('/rest/v1/rpc/pack_preview', { method: 'POST', body: { p_pack: id } });
 export const claimPack = (id) => authed('/rest/v1/rpc/claim_pack', { method: 'POST', body: { p_pack: id } });
+
+// ---- the admin's pack builder (packs and pack_recipes are admin-writable; see add_pack_builder.sql)
+export const adminPacks = () => authed('/rest/v1/packs?select=*&order=sort,title');
+export async function adminSavePack(pack, isNew) {
+  const body = { title: pack.title, description: pack.description, price_cents: pack.price_cents, published: pack.published, sort: pack.sort };
+  if (isNew) return authed('/rest/v1/packs', { method: 'POST', headers: { Prefer: 'return=representation' }, body: { id: pack.id, ...body } });
+  return authed(`/rest/v1/packs?id=eq.${enc(pack.id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body });
+}
+export const adminDeletePack = (id) => authed(`/rest/v1/packs?id=eq.${enc(id)}`, { method: 'DELETE' });
+export const adminPackRecipes = (id) => authed(`/rest/v1/pack_recipes?select=id,title,categories,body,sort&pack_id=eq.${enc(id)}&order=sort,title`);
+/** Copies recipes (rows from listRecipes) into a pack. */
+export const adminAddToPack = (packId, rows, startSort = 0) => authed('/rest/v1/pack_recipes', {
+  method: 'POST', headers: { Prefer: 'return=minimal' },
+  body: rows.map((r, i) => ({ pack_id: packId, title: r.title, categories: r.categories || [], body: r.body, sort: startSort + i })),
+});
+export const adminRemoveFromPack = (id) => authed(`/rest/v1/pack_recipes?id=eq.${enc(id)}`, { method: 'DELETE' });

@@ -136,8 +136,9 @@ class Fake:
             return await route.fulfill(status=204, headers=CORS)
         if path == "/auth/v1/logout":
             return await ok({})
-        if path == "/rest/v1/packs":
-            return await ok(sorted([p for p in self.packs.values() if p["published"]], key=lambda p: (p["sort"], p["title"])))
+        if path == "/rest/v1/packs" and req.method == "GET":
+            admin_ = user and user["role"] == "admin"
+            return await ok(sorted([p for p in self.packs.values() if p["published"] or admin_], key=lambda p: (p["sort"], p["title"])))
         if path == "/rest/v1/rpc/pack_preview":
             return await ok(self.pack_recipes.get(body["p_pack"], []))
         if user is None:
@@ -255,6 +256,38 @@ class Fake:
                 return await route.fulfill(status=204, headers=CORS)
             if path.endswith("/save_household_list"):
                 mine["list"] = body["p_list"]; mine["list_at"] = max(mine["list_at"] + 1, body["p_at"])
+                return await route.fulfill(status=204, headers=CORS)
+        if path == "/rest/v1/packs":
+            if user["role"] != "admin":
+                return await ok({"message": "new row violates row-level security policy"}, 403)
+            if req.method == "POST":
+                if body["id"] in self.packs:
+                    return await ok({"message": "duplicate key value violates unique constraint"}, 409)
+                self.packs[body["id"]] = dict(body)
+                self.pack_recipes.setdefault(body["id"], [])
+                return await ok([self.packs[body["id"]]], 201)
+            if req.method == "PATCH":
+                self.packs[eq("id")].update(body)
+                return await ok([self.packs[eq("id")]])
+            if req.method == "DELETE":
+                self.packs.pop(eq("id"), None); self.pack_recipes.pop(eq("id"), None)
+                return await route.fulfill(status=204, headers=CORS)
+        if path == "/rest/v1/pack_recipes":
+            if user["role"] != "admin":
+                return await ok([])
+            if req.method == "GET":
+                return await ok(self.pack_recipes.get(eq("pack_id"), []))
+            if req.method == "POST":
+                for r in body:
+                    b = r["body"] or {}
+                    if (b.get("src") or {}).get("url") and not b.get("adapted"):
+                        return await ok({"message": "That recipe is a copy of another website's. Make your own version of it first."}, 400)
+                for r in body:
+                    self.pack_recipes.setdefault(r["pack_id"], []).append({"id": str(uuid.uuid4()), **r})
+                return await route.fulfill(status=201, headers=CORS)
+            if req.method == "DELETE":
+                for k, rows in self.pack_recipes.items():
+                    self.pack_recipes[k] = [r for r in rows if r.get("id") != eq("id")]
                 return await route.fulfill(status=204, headers=CORS)
         if path == "/rest/v1/entitlements":
             return await ok([dict(product=e["product"], revoked_at=e["revoked_at"]) for e in self.entitlements if e["user_id"] == user["id"]])
@@ -776,6 +809,10 @@ async def run():
         await admin.click("a:has-text('Import from a web page or a photo')")
         await admin.fill("input[aria-label='Recipe page address']", "example.com/test-lentil-soup/")
         await admin.click("button:has-text('Get recipe')")
+        await admin.wait_for_selector(".importchoice button:has-text('Make it my own')")
+        check("an imported page offers making it my own or keeping a private copy",
+              await admin.locator(".importchoice button:has-text('Keep a private copy')").count() == 1)
+        await admin.click(".importchoice button:has-text('Keep a private copy')")
         await admin.wait_for_selector("h1:has-text('Check and save')")
         check("imported recipe opens in the editor with the credit filled in",
               await admin.input_value("input[aria-label='Recipe by']") == "Pat Example"
@@ -842,6 +879,46 @@ async def run():
         check("own version shows its Adapted from credit", "Adapted from Pat Example" in await admin.inner_text(".srccredit"))
         check("own version can be shared with the Community", await admin.locator("button:has-text('Share with the Community')").count() == 1)
         await admin.screenshot(path="/tmp/cloud_adapted.png", full_page=True)
+
+        # ---- importing a link straight into my own version: the original text is never saved
+        n_before = len(fake.recipes)
+        await admin.goto(URL + "#/import")
+        await admin.fill("input[aria-label='Recipe page address']", "example.com/another-soup/")
+        await admin.click("button:has-text('Get recipe')")
+        await admin.click(".importchoice button:has-text('Make it my own')")
+        await admin.wait_for_selector("h1:has-text('Make your own version')")
+        check("Make it my own opens the rewrite page with the original for reference", await admin.locator("details.original li").count() == 2
+              and await admin.input_value("textarea") == "")
+        check("and nothing is saved yet", len(fake.recipes) == n_before)
+        await admin.click("button:has-text('Cancel')")
+
+        # ---- the admin's pack builder
+        await admin.goto(URL + "#/admin")
+        await admin.click("a:has-text('Open the pack builder')")
+        await admin.fill("input[aria-label='New pack name']", "Test Soups")
+        await admin.click("button:has-text('Make the pack')")
+        await admin.wait_for_selector("h1:has-text('Test Soups')")
+        check("the admin can make a pack (a draft to start)", "test-soups" in fake.packs and fake.packs["test-soups"]["published"] is False)
+        await admin.wait_for_selector(".picklist li")
+        copy_row = admin.locator(".picklist li:has-text('Test Lentil Soup'):not(:has-text('my version'))")
+        check("a straight copy of a website's recipe can't be picked", await copy_row.locator("input[disabled]").count() == 1
+              and "make your own version first" in await copy_row.inner_text())
+        await admin.check(".picklist li:has-text('(my version)') input")
+        await admin.click("button:has-text('Add 1 to the pack')")
+        await admin.wait_for_selector("ul.rows li:has-text('(my version)') button:has-text('Take out')")
+        check("your own version goes into the pack", [r["title"] for r in fake.pack_recipes["test-soups"]] == ["Test Lentil Soup (my version)"])
+        await admin.fill("textarea[aria-label='Pack description']", "Soups for testing.")
+        await admin.check("input[aria-label='Published']")
+        await admin.click("button:has-text('Save pack')")
+        await admin.wait_for_selector("#toast:has-text('Pack saved')")
+        check("a pack can be described and published", fake.packs["test-soups"]["published"] is True and fake.packs["test-soups"]["description"] == "Soups for testing.")
+        await admin.click("ul.rows li:has-text('(my version)') button:has-text('Take out')")
+        await admin.wait_for_selector("li:has-text('No recipes in this pack yet')")
+        check("a recipe can be taken out of a pack", fake.pack_recipes["test-soups"] == [])
+        await admin.click("button:has-text('Delete pack')")
+        await admin.click("dialog[open] button:has-text('Delete pack')")
+        await admin.wait_for_selector("h1:has-text('Pack builder')")
+        check("a pack can be deleted", "test-soups" not in fake.packs)
 
         # ---- asking for an invite, and a used-up link
         qctx, q = await new_page(b, fake)

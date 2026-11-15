@@ -428,6 +428,24 @@ select t.denied('the free limit still applies to hand-made recipes', $$ insert i
 reset role;
 update public.app_settings set free_recipe_limit = 25;
 delete from public.recipes where owner_id = :'s2' and title in ('Sneaky', 'Free Soup', 'Quick Pasta', 'Fast Fish');
+-- the admin's pack builder
+select t.login(:'s2'); set role authenticated;
+select t.denied('people cannot make packs', $$ insert into public.packs (id, title) values ('mine', 'Mine') $$);
+select t.expect('people cannot change a pack', t.n($$ with u as (update public.packs set price_cents = 0 where id = 'weeknights' returning 1) select count(*) from u $$) = 0);
+select t.denied('people cannot put recipes in packs', $$ insert into public.pack_recipes (pack_id, title, body) values ('freebies', 'Mine', '{}') $$);
+reset role;
+select t.login(:'admin_id'); set role authenticated;
+insert into public.packs (id, title, published) values ('builder', 'Builder', false);
+select t.expect('the admin sees draft packs', t.n($$ select count(*) from public.packs where id = 'builder' $$) = 1);
+insert into public.pack_recipes (pack_id, title, body) values ('builder', 'My Soup', '{"dir":"Mine."}');
+insert into public.pack_recipes (pack_id, title, body) values ('builder', 'My Version', '{"adapted":{"url":"https://example.com/x"},"dir":"Mine."}');
+select t.expect('the admin can fill a pack with their own recipes', t.n($$ select count(*) from public.pack_recipes where pack_id = 'builder' $$) = 2);
+select t.denied('a copy of another website''s recipe cannot go in a pack', $$ insert into public.pack_recipes (pack_id, title, body) values ('builder', 'Copied', '{"src":{"url":"https://example.com/y"}}') $$);
+select t.denied('a link card cannot go in a pack', $$ insert into public.pack_recipes (pack_id, title, body) values ('builder', 'Link', '{"kind":"link"}') $$);
+update public.packs set published = true, description = 'Two soups' where id = 'builder';
+delete from public.packs where id = 'builder';
+select t.expect('deleting a pack removes its recipes', t.n($$ select count(*) from public.pack_recipes where pack_id = 'builder' $$) = 0);
+reset role;
 
 -- ---- invite links and invite requests ----------------------------------------
 select t.login(:'admin_id'); set role authenticated;

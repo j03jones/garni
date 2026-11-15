@@ -23,6 +23,7 @@ import { compactTitle, edgeSwipeBack, flyingTiles, pullToRefresh, swipeableSheet
 import { dietOf, estimateMinutes, formatMinutes, sortKey } from './insights.js';
 import { homeFeed, metaLine } from './home.js';
 import { packShelf, viewPack, viewPacks } from './packs.js';
+import { viewPackBuilder, viewPackEdit } from './packbuilder.js';
 import { proCard } from './pro.js';
 import { pickDay, useApp, viewPantry, viewPlan, viewShop } from './planning.js';
 import { ingredientsIn, splitSteps, voiceCommand } from './steps.js';
@@ -1629,6 +1630,7 @@ function viewImport(prefill = '') {
   } });
   const status = h('p', { class: 'muted small', role: 'status' });
   const go = h('button', { class: 'primary', type: 'button', disabled: !signedIn, onclick: run }, 'Get recipe');
+  const choice = h('div', { class: 'stack importchoice' });
   async function run() {
     let link = url.value.trim();
     if (!link) { url.focus(); return; }
@@ -1642,7 +1644,20 @@ function viewImport(prefill = '') {
       r.imported = true;
       const dup = lib.all.find((x) => x.src?.url && x.src.url === r.src.url);
       if (dup) { toast('That recipe is already in your recipes'); location.hash = `#/r/${encodeURIComponent(dup.id)}`; return; }
-      viewEdit(null, r);
+      status.textContent = '';
+      fill(choice,
+        h('h2', null, r.title),
+        h('p', { class: 'muted small' }, [r.src?.author, r.src?.name].filter(Boolean).join(', ') || r.src?.url || ''),
+        h('div', { class: 'card stack' },
+          h('strong', null, 'Make it my own'),
+          h('p', { class: 'muted small' }, 'Keep the ingredients and write the method in your own words, with the original shown for reference (it isn’t saved). Your version says “Adapted from” with a link, and it can go to the Community or in a pack.'),
+          h('button', { type: 'button', class: 'primary', onclick: () => adaptRecipe(r) }, 'Make it my own')),
+        h('div', { class: 'card stack' },
+          h('strong', null, 'Keep a private copy'),
+          h('p', { class: 'muted small' }, 'The recipe as it is, credited and only for you. You can make your own version of it later.'),
+          h('button', { type: 'button', onclick: () => viewEdit(null, r) }, 'Keep a private copy')));
+      go.disabled = false;
+      choice.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } catch (err) {
       status.textContent = err.message;
       go.disabled = false;
@@ -1659,7 +1674,7 @@ function viewImport(prefill = '') {
     !signedIn && h('p', { class: 'note' }, 'Sign in first (Settings). The phone can’t read other websites on its own, so the page is read through your account.'),
     h('label', { class: 'field' }, h('span', null, 'Recipe page address'), url),
     h('div', { class: 'row grow' }, go, pasteBtn),
-    status,
+    status, choice,
     h('p', { class: 'muted small' }, 'Tip: in your browser or another app, choose Share › Garni to send a recipe page straight here.'),
     h('h2', null, 'Scan a printed recipe'),
     h('p', { class: 'muted' }, 'Take a photo of a cookbook page or a recipe card. Garni reads the text on this device (the photo isn’t uploaded) and you check it before it’s saved. Printed recipes work best; handwriting is hit and miss.'),
@@ -1847,6 +1862,7 @@ function route() {
   if (kind === 'prices') return viewPrices();
   if (kind === 'packs') return viewPacks(ctx);
   if (kind === 'pack' && id) return viewPack(ctx, id);
+  if (kind === 'packbuilder') return id ? viewPackEdit(ctx, id) : viewPackBuilder(ctx);
   if (kind === 'transfer') return viewTransfer();
   return viewList();
 }
