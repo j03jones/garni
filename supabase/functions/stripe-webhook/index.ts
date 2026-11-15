@@ -11,7 +11,7 @@
 // Events: checkout.session.completed records the purchase; charge.refunded takes it back. Anything else is ignored.
 const URL_ = Deno.env.get('SUPABASE_URL')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+const SECRET = (Deno.env.get('STRIPE_WEBHOOK_SECRET') || '').trim();   // a pasted secret can carry a space or newline
 // Garni's Payment Links (ids aren't secret). STRIPE_PRODUCTS can add to or override these.
 const LINKS: Record<string, string> = {
   plink_1UcCxC8wzxd3IPZFhXFF4ph4: 'pro',          // test mode: Garni Pro, $29
@@ -49,7 +49,11 @@ async function rest(path: string, init: RequestInit = {}) {
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return text('Use POST.', 405);
   const raw = await req.text();
-  if (!(await verify(raw, req.headers.get('stripe-signature') || '', SECRET))) return text('Bad signature.', 400);
+  if (!SECRET) { console.error('STRIPE_WEBHOOK_SECRET is not set'); return text('The webhook secret is not set up yet.', 500); }
+  if (!(await verify(raw, req.headers.get('stripe-signature') || '', SECRET))) {
+    console.error('signature mismatch: is STRIPE_WEBHOOK_SECRET the signing secret of this destination?');
+    return text('Bad signature.', 400);
+  }
   let event: any;
   try { event = JSON.parse(raw); } catch { return text('Bad request.', 400); }
   const o = event?.data?.object || {};
