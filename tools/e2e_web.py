@@ -326,6 +326,40 @@ async def run():
         check("Settings offers Support Garni / Unlock Pro", "Unlock Pro" in pro and "Sign in first" in pro, pro[:80])
         check("and shows no Buy button until signed in", await page.locator(".procard a.btnlink").count() == 0)
 
+        # ---- learned from the top apps: Jump back in, text size, Add again, calendar, shortcuts
+        await page.goto(URL + "#/r/2cfb6e434f"); await page.wait_for_selector(".rhead h1")
+        await page.goto(URL + "#/r/cb45b13424"); await page.wait_for_selector(".rhead h1:has-text('Steak Diane')")
+        await page.goto(URL + "#/"); await page.wait_for_selector(".feed .fcard")
+        jump = await page.locator(".shelf[aria-label='Jump back in'] .ft").all_inner_texts()
+        check("home has Jump back in, newest first", len(jump) >= 2 and jump[0] == "Steak Diane" and jump[1] == "Chickenburgers", jump[:3])
+        await page.goto(URL + "#/settings"); await page.wait_for_selector(".seg.textsize")
+        await page.click(".seg.textsize button:has-text('Largest')")
+        size = await page.evaluate("getComputedStyle(document.documentElement).fontSize")
+        check("text size Largest makes everything bigger", size == "20px", size)
+        await page.reload(); await page.wait_for_selector(".seg.textsize")
+        check("the text size is remembered", await page.evaluate("getComputedStyle(document.documentElement).fontSize") == "20px"
+              and await page.get_attribute(".seg.textsize button:has-text('Largest')", "aria-checked") == "true")
+        await page.click(".seg.textsize button:has-text('Default')")
+        check("and can go back to the default", await page.evaluate("getComputedStyle(document.documentElement).fontSize") == "16px")
+        await page.goto(URL + "#/shop"); await page.wait_for_selector(".addextra input")
+        for item in ("Coffee beans", "Paper towels"):
+            await page.fill(".addextra input", item); await page.press(".addextra input", "Enter")
+        await page.click("button[aria-label='Remove Coffee beans']")   # off the list
+        await page.wait_for_selector(".chips.usual button:has-text('Coffee beans')")
+        check("things added by hand come back as Add again chips", await page.locator(".chips.usual button:has-text('Paper towels')").count() == 0)
+        await page.click(".chips.usual button:has-text('Coffee beans')")
+        check("one tap puts it back on the list", await page.locator(".shoplist li.extra:has-text('Coffee beans')").count() == 1)
+        await page.goto(URL + "#/plan"); await page.wait_for_selector(".planday")
+        if not await page.locator(".planitem").count():
+            await page.click("button[aria-label='Next week']"); await page.wait_for_selector(".planitem")
+        async with page.expect_download() as dl:
+            await page.click("button:has-text('Add to calendar')")
+        ics = Path(await (await dl.value).path()).read_bytes().decode()
+        check("the meal plan downloads as a calendar file", ics.startswith("BEGIN:VCALENDAR") and "BEGIN:VEVENT" in ics and "DTSTART;VALUE=DATE:" in ics
+              and "\r\n" in ics and (await dl.value).suggested_filename.endswith(".ics"), ics[:120])
+        man = await page.evaluate("fetch('manifest.webmanifest').then(r => r.json())")
+        check("the installed app has home-screen shortcuts", [x["url"] for x in man.get("shortcuts", [])] == ["./#/plan", "./#/shop", "./#/new", "./#/pantry"])
+
         # ---- hands-free cook mode
         await page.goto(URL + "#/r/6cd1288901")
         await page.wait_for_selector(".cookbtn")

@@ -812,3 +812,17 @@ li.swipe > * { position: relative; z-index: 1; }
 .sendsheet { width: min(92vw, 460px); }
 .sendopt { display: flex; flex-direction: column; gap: .35rem; padding: .9rem 0; border-top: 1px solid var(--line); }
 .sendopt .row { margin-top: .3rem; }
+
+/* Text size (Settings) */
+.textsizecard { margin-bottom: .9rem; }
+.seg.textsize { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
+.seg.textsize button { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .15rem;
+  min-width: 0; padding: .5rem .2rem; border-radius: 1rem; font-weight: 600; line-height: 1.1; }
+.seg.textsize .aa { font-family: var(--display); line-height: 1; }
+.seg.textsize .lbl { font-size: .72rem; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.seg.textsize button[aria-checked=true] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+/* "Add again" on the shopping list */
+.chips.usual { margin: -.35rem 0 1rem; }
+.chips.usual > .muted { align-self: center; flex: none; }
+@media print { .chips.usual { display: none !important; } }

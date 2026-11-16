@@ -124,3 +124,33 @@ export function merge(a, b) {
   }
   return clean(out);
 }
+
+/** The given days of the plan as an iCalendar file (all-day events), for Apple Calendar, Google Calendar or Outlook.
+ *  titleOf(id) gives a recipe's title (null to leave it out); link(id) its address. */
+export function toICS(plan, dates, titleOf, link, stamp = new Date()) {
+  const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const day = (iso) => iso.replace(/-/g, '');
+  const utc = stamp.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  // lines over 75 octets are folded, as the format asks (a space starts each continuation)
+  const fold = (line) => {
+    const out = []; let cur = '';
+    for (const ch of line) {
+      if (new TextEncoder().encode(cur + ch).length > 75) { out.push(cur); cur = ` ${ch}`; } else cur += ch;
+    }
+    return [...out, cur].join('\r\n');
+  };
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Garni//Meal plan//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Garni meal plan'];
+  for (const d of dates) {
+    (plan.days[d] || []).forEach((e, n) => {
+      const title = e.id ? titleOf(e.id) : e.note;
+      if (!title) return;
+      lines.push('BEGIN:VEVENT', `UID:garni-${day(d)}-${n}-${e.id || 'note'}@garni.page`, `DTSTAMP:${utc}`,
+        `DTSTART;VALUE=DATE:${day(d)}`, `DTEND;VALUE=DATE:${day(addDays(d, 1))}`, `SUMMARY:${esc(title)}`,
+        'TRANSP:TRANSPARENT');
+      if (e.id && link) lines.push(`URL:${esc(link(e.id))}`, `DESCRIPTION:${esc(`Recipe in Garni: ${link(e.id)}`)}`);
+      lines.push('END:VEVENT');
+    });
+  }
+  lines.push('END:VCALENDAR');
+  return `${lines.map(fold).join('\r\n')}\r\n`;
+}

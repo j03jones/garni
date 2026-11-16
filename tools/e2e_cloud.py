@@ -663,7 +663,7 @@ async def run():
         await st.reload()
         await st.wait_for_selector(".empty, .shoplist", timeout=15000)
         await st.wait_for_timeout(1500)
-        check("a change on the second device comes back to the first", await st.locator("text=Paper towels").count() == 0)
+        check("a change on the second device comes back to the first", await st.locator(".shoplist li.extra:has-text('Paper towels')").count() == 0)
 
         # ---- ingredient prices follow the person too
         await st.goto(URL + "#/")

@@ -5,9 +5,11 @@ import * as cloud from './cloud.js';
 import * as pantry from './pantry.js';
 import * as planner from './planner.js';
 import * as shop from './shopping.js';
+import * as prefs from './prefs.js';
 import { Frac } from './units.js';
 import { buzz, copyText, emojiFor, icon, isStarred } from './ui.js';
-import { canShare, share } from './native.js';
+import { canShare, isNative, share } from './native.js';
+import { appBase } from './applink.js';
 import { draggable, swipeRow } from './motion.js';
 
 // helpers that live in app.js (see useApp)
@@ -127,6 +129,14 @@ export function viewPlan() {
             toast(`${planned.length} ${planned.length === 1 ? 'recipe' : 'recipes'} added to the shopping list`);
             location.hash = '#/shop/send';                     // the list, with "Send your list" open
           } }, icon('cart', { size: 18 }), 'Build grocery cart'),
+          !isNative() && h('button', { type: 'button', disabled: !dates.some((d) => plan.days[d]), onclick: () => {
+            // a calendar file: opening it adds the week's meals as all-day events (Apple Calendar, Google, Outlook)
+            const ics = planner.toICS(plan, dates, (id) => lib.byId.get(id)?.title || null, (id) => `${appBase()}#/r/${encodeURIComponent(id)}`);
+            const a = h('a', { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: `garni-meals-${dates[0]}.ics` });
+            document.body.append(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+            toast('Open the downloaded file to add these meals to your calendar', 4000);
+          } }, icon('calendar', { size: 18 }), 'Add to calendar'),
           h('button', { type: 'button', disabled: !dates.some((d) => plan.days[d]), onclick: async () => {
             if (await confirmDialog('Clear every meal planned for this week?', 'Clear week', true)) { planner.clearDates(dates); paint(); }
           } }, 'Clear week')),
@@ -181,6 +191,7 @@ export function viewShop(open = '') {
     e.preventDefault();
     if (!extraIn.value.trim()) return;
     if (!shop.addExtra(extraIn.value)) toast('Could not save the shopping list on this browser');
+    else prefs.noteUsual(extraIn.value);
     extraIn.value = '';
     paint();
     extraIn.focus();
@@ -200,8 +211,21 @@ export function viewShop(open = '') {
     const n = planAhead().length;
     return n > 0 && h('button', { class: cls, type: 'button', onclick: importPlan }, `Add my meal plan (${n} ${n === 1 ? 'recipe' : 'recipes'}, next 7 days)`);
   };
+  // the things this person often adds by hand, one tap each (not ones already on the list)
+  const usualRow = h('div', { class: 'chips usual', role: 'group', 'aria-label': 'Add again' });
+  function paintUsual(list) {
+    const on = new Set(list.extras.map((x) => x.text.trim().toLowerCase()));
+    const items = prefs.usualItems().filter((x) => !on.has(x.text.trim().toLowerCase())).slice(0, 12);
+    usualRow.hidden = !items.length;
+    fill(usualRow, items.length > 0 && h('span', { class: 'muted small' }, 'Add again'),
+      items.map((x) => h('button', { type: 'button', class: 'chip', 'aria-label': `Add ${x.text}`, onclick: () => {
+        if (!shop.addExtra(x.text)) { toast('Could not save the shopping list on this browser'); return; }
+        prefs.noteUsual(x.text); buzz(8); paint();
+      }, oncontextmenu: (e) => { e.preventDefault(); prefs.forgetUsual(x.text); toast(`${x.text} won’t be suggested again`); paint(); } }, '+ ', x.text)));
+  }
   function paint() {
     const list = shop.load();
+    paintUsual(list);
     let picks = list.items.map((i) => [lib.byId.get(i.id), Frac.parse(i.f) || new Frac(1n)]).filter(([r]) => r && r.kind !== 'link');
     // recipes from the on-demand library need their amounts before they can be added up
     const waiting = picks.filter(([r]) => r.stub && !more.failed.has(r.id));
@@ -316,7 +340,7 @@ export function viewShop(open = '') {
       h('label', { class: 'field' }, h('span', null, 'Or join one with its code'), codeIn),
       h('button', { type: 'button', onclick: () => { if (codeIn.value.trim()) after(() => cloud.joinHousehold(codeIn.value.trim()), 'You joined the household'); } }, 'Join a household')));
   }
-  fill($app, pageHead('Shopping list', 'Everything for the recipes you picked, in one list'), planSeg('shop'), sharedNote, extraForm, body, hhCard);
+  fill($app, pageHead('Shopping list', 'Everything for the recipes you picked, in one list'), planSeg('shop'), sharedNote, extraForm, usualRow, body, hhCard);
   paint();
   paintHousehold();
   if (open === 'send') {

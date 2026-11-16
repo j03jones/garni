@@ -38,6 +38,7 @@ export function homeFeed(ctx) {
     .sort((a, b) => String(b.row.created_at).localeCompare(String(a.row.created_at)));
 
   return h('div', { class: 'feed' },
+    shelf('Jump back in', byId(ctx.viewedIds?.() || []).slice(0, PER_SHELF)),
     shelf('Cook again', byId(ctx.recentCooked()).slice(0, PER_SHELF), () => { location.hash = '#/cooked'; }),
     shelf('Your stars', byId(ctx.starIds()).slice(0, PER_SHELF), () => { location.hash = '#/starred'; }),
     shelf('Ready in 30 minutes', pick(library.filter((r) => r._mins != null && r._mins <= 30 && meal(r)), PER_SHELF, seed), () => ctx.filter('quick')),

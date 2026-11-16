@@ -7,6 +7,7 @@ import * as planner from './planner.js';
 import * as pantry from './pantry.js';
 import * as collections from './collections.js';
 import * as cooklog from './cooklog.js';
+import * as prefs from './prefs.js';
 import * as prices from './prices.js';
 import { priceBook, recipeCosting } from './costui.js';
 import { transferPage } from './transferui.js';
@@ -633,7 +634,7 @@ function viewList(starredOnly = false) {
     '🌿 Vegetarian');
   const quickRow = h('div', { class: 'chips quick', role: 'group', 'aria-label': 'Filters' }, quickBtn, vegBtn,
     h('span', { class: 'muted small hint' }, 'Times and labels are worked out from each recipe, so check before you rely on them.'));
-  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, packShelf: () => packShelf(ctx), recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id),
+  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, packShelf: () => packShelf(ctx), recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id), viewedIds: prefs.viewedIds,
     filter: (kind) => { listState[kind] = true; listState.shown = PAGE; chipState(); paint(); allHead.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
   const allHead = h('h2', { class: 'allhead' }, 'Browse all recipes');
 
@@ -901,6 +902,7 @@ function viewRecipe(id, preset = null) {
   if (r.stub) return viewFetching(id, () => viewRecipe(id));
   if (r.kind === 'link') return viewLinkCard(r);
   setView('recipe', 'list');
+  if (!shared) prefs.noteViewed(r.id);
   let factor = new Frac(1n);
   let smart = true;
 
@@ -1774,6 +1776,15 @@ async function viewSettings() {
     accountCard(ctx),
     proCard(ctx),
     h('h2', null, 'This device'),
+    h('section', { class: 'card stack textsizecard' },
+      h('strong', { id: 'textsize-label' }, 'Text size'),
+      h('div', { class: 'seg textsize', role: 'radiogroup', 'aria-labelledby': 'textsize-label' }, prefs.TEXT_SIZES.map((t) =>
+        h('button', { type: 'button', role: 'radio', 'aria-checked': String(prefs.textSize().id === t.id),
+          onclick: (e) => {
+            prefs.applyTextSize(t.id);
+            for (const b of e.currentTarget.parentNode.children) b.setAttribute('aria-checked', String(b === e.currentTarget));
+          } }, h('span', { class: 'aa', 'aria-hidden': 'true', style: `font-size: ${t.scale * 1.15}em` }, 'Aa'), h('span', { class: 'lbl' }, t.label)))),
+      h('span', { class: 'muted small' }, 'Changes the size of everything in Garni on this device, cook mode included.')),
     h('section', { class: 'card stack' },
       h('strong', null, 'Status'),
       stat('Recipes in library', lib.all.length.toLocaleString()),
@@ -1871,6 +1882,7 @@ const ctx = {
 useApp({ $app, h, fill, toast, lib, band, pageHead, confirmDialog, setView, ensureFull, more, matches, PAGE, thumb, tick, timesLabel, firstName, DATE_FMT, DAY_FMT, syncHousehold, saveHHBase });
 
 async function boot() {
+  prefs.applyTextSize();
   const linkType = cloud.takeSessionFromHash();      // arriving from a confirmation / reset email
   if (linkType) history.replaceState(history.state, '', `${location.pathname}${location.search}#/settings`);
   loadCloudCache();

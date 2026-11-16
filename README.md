@@ -328,6 +328,7 @@ The tooling's library file defaults to `~/.local/share/sprig/recipes.db` on Linu
 | --- | --- |
 | `app.js` | starts the app, routing, the recipe list and recipe page, editing, settings |
 | `planning.js` | meal plan (drag a meal to another day), Build grocery cart, shopping list and Send your list, sharing it with a household, What can I make? |
+| `prefs.js` | what this device remembers: recipes opened lately (Jump back in), text size, things often added to the list |
 | `packs.js` | starter recipe packs: free ones picked from the library, and packs kept on the server |
 | `packbuilder.js` | the admin's pack builder: make packs and fill them with your own recipes |
 | `pro.js` | Garni Pro and tips: what someone has bought, the Settings card, the admin's grant tool, the Stripe Payment Links |
