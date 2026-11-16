@@ -326,8 +326,18 @@ async def run():
         check("Settings offers Support Garni / Unlock Pro", "Unlock Pro" in pro and "Sign in first" in pro, pro[:80])
         check("and shows no Buy button until signed in", await page.locator(".procard a.btnlink").count() == 0)
 
+        # ---- library methods without mailing-list sign-offs, CAPITALS or "250 deg F"
+        await page.goto(URL + "#/r/c447fab046"); await page.wait_for_selector("ol.steps, .dir")
+        method = await page.inner_text("#app")
+        check("a library method drops its sign-off and keeps the source as a credit",
+              "Posted by" not in method and "Source: A Taste of Quebec by Julian Armstrong" in await page.inner_text(".methodsource")
+              and "250°F" in method, method[-300:])
+        await page.goto(URL + "#/r/91b2d98d77"); await page.wait_for_selector(".rhead h1:has-text('Pizza Deluxe')")
+        check("a recipe written in CAPITALS reads in normal sentences", "Cook ground round and drain" in await page.inner_text("#app"))
+        check("and its ingredients aren't shouted either", "3 oz pepperoni" in await page.inner_text("ul.ing"))
+
         # ---- learned from the top apps: Jump back in, text size, Add again, calendar, shortcuts
-        await page.goto(URL + "#/r/2cfb6e434f"); await page.wait_for_selector(".rhead h1")
+        await page.goto(URL + "#/r/2cfb6e434f"); await page.wait_for_selector(".rhead h1:has-text('Chickenburgers')")
         await page.goto(URL + "#/r/cb45b13424"); await page.wait_for_selector(".rhead h1:has-text('Steak Diane')")
         await page.goto(URL + "#/"); await page.wait_for_selector(".feed .fcard")
         jump = await page.locator(".shelf[aria-label='Jump back in'] .ft").all_inner_texts()

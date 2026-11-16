@@ -329,6 +329,7 @@ The tooling's library file defaults to `~/.local/share/sprig/recipes.db` on Linu
 | `app.js` | starts the app, routing, the recipe list and recipe page, editing, settings |
 | `planning.js` | meal plan (drag a meal to another day), Build grocery cart, shopping list and Send your list, sharing it with a household, What can I make? |
 | `buyas.js`, `buydata.js` | the shopping list in store sizes (“5 lb bag”, “1 head”, “1½ lb”) and the Check the cupboard group |
+| `dirtidy.js` | library methods shown without mailing-list sign-offs, CAPITALS, separator lines or "500 DEG F"; sources kept as a credit |
 | `popular.js` | which recipes come first: well-known dishes and tidy recipes, one copy of each dish at the front |
 | `prefs.js` | what this device remembers: recipes opened lately (Jump back in), text size, things often added to the list |
 | `packs.js` | starter recipe packs: free ones picked from the library, and packs kept on the server |

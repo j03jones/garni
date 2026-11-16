@@ -830,3 +830,5 @@ li.swipe > * { position: relative; z-index: 1; }
 /* Shopping list: store sizes in bold, what the recipes use in small print */
 .shoplist .what .need { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; margin-top: .1rem; }
 .aisle.cupboard { margin-top: 1.6rem; }
+
+.methodsource { margin-top: 1.2rem; }
