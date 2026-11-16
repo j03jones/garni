@@ -5,6 +5,7 @@ import * as cloud from './cloud.js';
 import * as pantry from './pantry.js';
 import * as planner from './planner.js';
 import * as shop from './shopping.js';
+import { annotate } from './buyas.js';
 import * as prefs from './prefs.js';
 import { Frac } from './units.js';
 import { buzz, copyText, emojiFor, icon, isStarred } from './ui.js';
@@ -159,14 +160,16 @@ const setSkipHave = (on) => { try { localStorage.setItem(SKIP_HAVE_KEY, on ? '1'
 /** "Send your list": the shopping list to Reminders, Keep or anywhere else. (A grocery service such as
  *  Instacart slots in here as another option once there is an Instacart developer account.) */
 function sendSheet(left, fullText) {
-  const checklist = shop.toChecklist(left);
+  const checklist = shop.toChecklist(left.filter((l) => !l.cupboard));
+  const skipped = left.filter((l) => l.cupboard).length;
   const done = (msg) => { toast(msg); dlg.close(); };
   const dlg = h('dialog', { class: 'sendsheet', 'aria-labelledby': 'send-title' },
     h('h2', { id: 'send-title' }, 'Send your list'),
     h('p', { class: 'muted small' }, `${left.length} ${left.length === 1 ? 'thing' : 'things'} still to get.`),
     h('div', { class: 'sendopt' },
       h('strong', null, 'Apple Reminders or Google Keep'),
-      h('span', { class: 'muted small' }, 'One item per line: paste it into a Reminders list or a Keep checklist and each line becomes its own item to tick off.'),
+      h('span', { class: 'muted small' }, 'One item per line: paste it into a Reminders list or a Keep checklist and each line becomes its own item to tick off.',
+        skipped > 0 && ` Cupboard staples (${skipped}) are left out.`),
       h('div', { class: 'row grow' },
         canShare() && h('button', { type: 'button', class: 'primary', onclick: async () => { await share({ title: 'Shopping list', text: checklist }); dlg.close(); } }, 'Share checklist'),
         h('button', { type: 'button', onclick: async () => done(await copyText(checklist) ? 'Checklist copied: paste it into Reminders or Keep' : 'Could not copy on this browser') }, 'Copy checklist'))),
@@ -246,7 +249,7 @@ export function viewShop(open = '') {
           h('a', { class: 'linkbtn', href: '#/' }, 'Browse the recipes'))));
       return;
     }
-    const all = [...shop.shoppingList(picks), ...shop.extraLines(list.extras)];
+    const all = [...annotate(shop.shoppingList(picks), picks), ...shop.extraLines(list.extras)];   // store sizes: buyas.js
     // things listed under "What can I make?" are already in the kitchen: set them aside, don't buy them
     const kitchen = pantry.load();
     const mine = skipHave() ? pantry.terms(kitchen.have) : [];
@@ -255,8 +258,28 @@ export function viewShop(open = '') {
     const have = all.filter(isHave);
     const done = new Set(list.done);
     const left = lines.filter((l) => !done.has(l.key));
+    const toBuy = lines.filter((l) => !l.cupboard);
+    const cupboard = lines.filter((l) => l.cupboard);
+    const need = (l) => [...l.amounts, ...l.notes].join(' + ');
+    const row = (l) => {
+      const btn = h('button', { class: 'tick', type: 'button', 'aria-pressed': String(done.has(l.key)),
+        title: l.recipes.join(', '),
+        onclick: () => { shop.setDone(l.key, btn.getAttribute('aria-pressed') !== 'true'); buzz(6); paint(); } },
+      h('span', { class: 'box' }, icon('check', { size: 16 })),
+      h('span', { class: 'what' }, l.name,
+        l.buy ? [h('b', null, ` ${l.buy}`), need(l) && h('span', { class: 'need' }, `recipes use ${need(l)}`)]
+          : l.cupboard ? need(l) && h('span', { class: 'need' }, need(l))
+            : need(l) && h('b', null, ` ${need(l)}`)));
+      return swipeRow(h('li', { class: l.extra ? 'extra' : null }, btn,
+        l.extra && h('button', { class: 'icon-btn', type: 'button', 'aria-label': `Remove ${l.name}`, title: 'Remove',
+          onclick: () => { shop.removeExtra(l.key); paint(); } }, icon('close', { size: 18 }))), {
+        onRight: () => { shop.setDone(l.key, !done.has(l.key)); buzz(6); paint(); },
+        rightLabel: done.has(l.key) ? 'Not yet' : 'Got it',
+        onLeft: l.extra ? () => { shop.removeExtra(l.key); buzz(6); paint(); } : null,
+      });
+    };
     const skipIn = h('input', { type: 'checkbox', checked: skipHave(), onchange: () => { setSkipHave(skipIn.checked); paint(); } });
-    const text = () => `Shopping list\n${picks.map(([r, f]) => `${r.title}${f.eq(new Frac(1n)) ? '' : ` (${timesLabel(f)})`}`).join('\n')}\n\n${shop.toTextByAisle(left)}`;
+    const text = () => `Shopping list\n${picks.map(([r, f]) => `${r.title}${f.eq(new Frac(1n)) ? '' : ` (${timesLabel(f)})`}`).join('\n')}\n\n${shop.toTextByAisle(left.filter((l) => !l.cupboard))}${left.some((l) => l.cupboard) ? `\n\nCheck the cupboard\n${shop.toText(left.filter((l) => l.cupboard))}` : ''}`;
     fill(body,
       picks.length > 0 && h('ul', { class: 'shoprecipes' }, picks.map(([r, f]) => h('li', null,
         h('a', { href: `#/r/${r.id}` }, r.title),
@@ -269,22 +292,13 @@ export function viewShop(open = '') {
       h('p', { class: 'muted small', role: 'status' }, left.length === lines.length
         ? `${lines.length} ${lines.length === 1 ? 'thing' : 'things'} to get`
         : `${left.length} of ${lines.length} still to get`),
-      shop.byAisle(lines).map(([aisle, group]) => [
+      shop.byAisle(toBuy).map(([aisle, group]) => [
         h('h3', { class: 'aisle' }, aisle),
-        h('ul', { class: 'ing shoplist' }, group.map((l) => {
-          const btn = h('button', { class: 'tick', type: 'button', 'aria-pressed': String(done.has(l.key)),
-            title: l.recipes.join(', '),
-            onclick: () => { shop.setDone(l.key, btn.getAttribute('aria-pressed') !== 'true'); buzz(6); paint(); } },
-          h('span', { class: 'box' }, icon('check', { size: 16 })),
-          h('span', { class: 'what' }, l.name, (l.amounts.length > 0 || l.notes.length > 0) && h('b', null, ` ${[...l.amounts, ...l.notes].join(' + ')}`)));
-          return swipeRow(h('li', { class: l.extra ? 'extra' : null }, btn,
-            l.extra && h('button', { class: 'icon-btn', type: 'button', 'aria-label': `Remove ${l.name}`, title: 'Remove',
-              onclick: () => { shop.removeExtra(l.key); paint(); } }, icon('close', { size: 18 }))), {
-            onRight: () => { shop.setDone(l.key, !done.has(l.key)); buzz(6); paint(); },
-            rightLabel: done.has(l.key) ? 'Not yet' : 'Got it',
-            onLeft: l.extra ? () => { shop.removeExtra(l.key); buzz(6); paint(); } : null,
-          });
-        }))]),
+        h('ul', { class: 'ing shoplist' }, group.map(row))]),
+      cupboard.length > 0 && [
+        h('h3', { class: 'aisle cupboard' }, 'Check the cupboard'),
+        h('p', { class: 'muted small' }, 'Spices, oils and staples you buy when they run out, not for one recipe. Tick them off if you have enough.'),
+        h('ul', { class: 'ing shoplist' }, cupboard.map(row))],
       kitchen.have.length > 0 && h('label', { class: 'check', style: 'margin-top:1.2rem' }, skipIn, 'Leave out what I already have ',
         h('a', { href: '#/pantry' }, '(my kitchen)')),
       have.length > 0 && h('details', { class: 'havebox' },
@@ -297,7 +311,7 @@ export function viewShop(open = '') {
           h('button', { type: 'button', onclick: async () => {
             if (await confirmDialog('Clear the whole shopping list?', 'Clear list', true)) { shop.clear(); paint(); }
           } }, 'Clear list')),
-        h('p', { class: 'muted small' }, 'Amounts are added up when they are the same kind of measure (cups with tablespoons, pounds with ounces). ',
+        h('p', { class: 'muted small' }, 'Bold is what to pick up in the store, in common US pack sizes; the small print is what the recipes use. Sizes vary by store and brand. ',
           lib.me ? 'The list is saved with your account.' : 'The list is kept on this device; sign in to have it follow you.'),
         lib.planSyncError && h('p', { class: 'note' }, `Not saved to your account yet: ${lib.planSyncError}`)));
   }

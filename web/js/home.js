@@ -33,6 +33,12 @@ export function homeFeed(ctx) {
     h('div', { class: 'shelfrow' }, list.map(card)));
 
   const byId = (ids) => ids.map((id) => lib.byId.get(id)).filter((r) => r && !r.hidden);
+  // the shelves change daily, but from the most popular matches, not the whole archive (popular.js)
+  const top = (list, k = 40) => [...list].sort((a, b) => (b._pop || 0) - (a._pop || 0)).slice(0, k);
+  const popularShelf = () => {
+    const dishes = (ctx.topDishes ? ctx.topDishes(library.filter((r) => meal(r) || r.categories.some((c) => SWEET.has(c))), 36, (r) => r._pop || 0) : []);
+    return pick(dishes, PER_SHELF, seed + 5).sort((a, b) => (b._pop || 0) - (a._pop || 0));
+  };
   const season = inSeason();
   const community = lib.all.filter((r) => r.source === 'community' && r.row?.created_at)
     .sort((a, b) => String(b.row.created_at).localeCompare(String(a.row.created_at)));
@@ -41,10 +47,11 @@ export function homeFeed(ctx) {
     shelf('Jump back in', byId(ctx.viewedIds?.() || []).slice(0, PER_SHELF)),
     shelf('Cook again', byId(ctx.recentCooked()).slice(0, PER_SHELF), () => { location.hash = '#/cooked'; }),
     shelf('Your stars', byId(ctx.starIds()).slice(0, PER_SHELF), () => { location.hash = '#/starred'; }),
-    shelf('Ready in 30 minutes', pick(library.filter((r) => r._mins != null && r._mins <= 30 && meal(r)), PER_SHELF, seed), () => ctx.filter('quick')),
-    shelf(season.title, pick(library.filter((r) => meal(r) && usesAny(r, season.words)), PER_SHELF, seed + 1)),
+    shelf('Popular favorites', popularShelf()),
+    shelf('Ready in 30 minutes', pick(top(library.filter((r) => r._mins != null && r._mins <= 30 && meal(r))), PER_SHELF, seed), () => ctx.filter('quick')),
+    shelf(season.title, pick(top(library.filter((r) => meal(r) && usesAny(r, season.words))), PER_SHELF, seed + 1)),
     ctx.packShelf?.(),
-    shelf('Meat-free mains', pick(library.filter((r) => r._veg && r.categories.some((c) => MAINS.has(c))), PER_SHELF, seed + 2), () => ctx.filter('veg')),
-    shelf('Something sweet', pick(library.filter((r) => r.categories.some((c) => SWEET.has(c))), PER_SHELF, seed + 3)),
+    shelf('Meat-free mains', pick(top(library.filter((r) => r._veg && r.categories.some((c) => MAINS.has(c)))), PER_SHELF, seed + 2), () => ctx.filter('veg')),
+    shelf('Something sweet', pick(top(library.filter((r) => r.categories.some((c) => SWEET.has(c)))), PER_SHELF, seed + 3)),
     shelf('New in Community', community.slice(0, PER_SHELF)));
 }

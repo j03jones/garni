@@ -8,6 +8,7 @@ import * as pantry from './pantry.js';
 import * as collections from './collections.js';
 import * as cooklog from './cooklog.js';
 import * as prefs from './prefs.js';
+import { dishOf, orderByPopularity, popularity, topDishes } from './popular.js';
 import * as prices from './prices.js';
 import { priceBook, recipeCosting } from './costui.js';
 import { transferPage } from './transferui.js';
@@ -481,6 +482,9 @@ function rebuild() {
     // worked out from the recipe's own text (estimated: the old archive recipes don't say); kept on the object
     if (r._mins === undefined || r._dirSeen !== r.dir) { r._mins = estimateMinutes(r); r._veg = !!dietOf(r)?.vegetarian; r._dirSeen = r.dir; }
     r._sort ??= sortKey(r.title);
+    if (r._popFor !== `${r.title}|${!!r.stub}`) {   // popular.js
+      r._pop = popularity(r); r._dish = dishOf(r.title)?.dish || ''; r._popFor = `${r.title}|${!!r.stub}`;
+    }
   }
   lib.all = [...map.values()].filter((r) => !r.hidden).sort((a, b) => collator.compare(a._sort, b._sort));
   const cats = new Map();
@@ -516,11 +520,12 @@ function matches(q, cat, src = '') {
     if (cat && !r.categories.some((c) => c.toLowerCase() === cat.toLowerCase())) continue;
     if (tokens.every((t) => r._hay.includes(t))) out.push(r);
   }
-  if (tokens.length) { // titles that contain every word first
+  const byPop = (list) => orderByPopularity(list.sort((a, b) => (b._pop || 0) - (a._pop || 0)));   // best copy of each dish first
+  if (tokens.length) { // titles that contain every word first, the popular ones at the front of each
     const inTitle = (r) => tokens.every((t) => r._title.includes(t));
-    return [...out.filter(inTitle), ...out.filter((r) => !inTitle(r))];
+    return [...byPop(out.filter(inTitle)), ...byPop(out.filter((r) => !inTitle(r)))];
   }
-  return out;
+  return byPop(out);
 }
 
 // -------------------------------------------------------------------- views
@@ -634,7 +639,7 @@ function viewList(starredOnly = false) {
     '🌿 Vegetarian');
   const quickRow = h('div', { class: 'chips quick', role: 'group', 'aria-label': 'Filters' }, quickBtn, vegBtn,
     h('span', { class: 'muted small hint' }, 'Times and labels are worked out from each recipe, so check before you rely on them.'));
-  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, packShelf: () => packShelf(ctx), recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id), viewedIds: prefs.viewedIds,
+  const feed = starredOnly ? h('div') : homeFeed({ h, lib, thumb, starIds, packShelf: () => packShelf(ctx), recentCooked: () => cooklog.recent(cooklog.load()).map(([id]) => id), viewedIds: prefs.viewedIds, topDishes,
     filter: (kind) => { listState[kind] = true; listState.shown = PAGE; chipState(); paint(); allHead.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
   const allHead = h('h2', { class: 'allhead' }, 'Browse all recipes');
 

@@ -331,6 +331,11 @@ async def run():
         await page.goto(URL + "#/r/cb45b13424"); await page.wait_for_selector(".rhead h1:has-text('Steak Diane')")
         await page.goto(URL + "#/"); await page.wait_for_selector(".feed .fcard")
         jump = await page.locator(".shelf[aria-label='Jump back in'] .ft").all_inner_texts()
+        popular = await page.locator(".shelf[aria-label='Popular favorites'] .ft").all_inner_texts()
+        check("home has a Popular favorites shelf of well-known dishes", len(popular) == 10, popular[:4])
+        await page.click(".allhead"); first = (await page.locator("ul.rows li .t").all_inner_texts())[:6]
+        check("Browse all recipes starts with popular dishes, not the alphabet", not any(t[:1] in '"\'(0123456789' for t in first)
+              and len({t.split()[-1] for t in first}) >= 4, first)
         check("home has Jump back in, newest first", len(jump) >= 2 and jump[0] == "Steak Diane" and jump[1] == "Chickenburgers", jump[:3])
         await page.goto(URL + "#/settings"); await page.wait_for_selector(".seg.textsize")
         await page.click(".seg.textsize button:has-text('Largest')")
@@ -508,6 +513,9 @@ async def run():
         await p4.wait_for_selector(".shoplist")
         check("the week goes to the shopping list, twice-planned counted twice", "×2" in await p4.inner_text(".shoprecipes"))
         check("the list is grouped by aisle", await p4.locator("h3.aisle").count() >= 3, await p4.locator("h3.aisle").count())
+        check("the list says what to buy in store sizes, with what the recipes use beside it",
+              await p4.locator(".shoplist .what .need:has-text('recipes use')").count() >= 3)
+        check("spices and staples go under Check the cupboard", await p4.locator("h3.aisle.cupboard").count() == 1)
         check("the meal-plan button goes once the list matches", await p4.locator("button:has-text('Add my meal plan')").count() == 0)
         await p4.fill(".addextra input", "Paper towels")
         await p4.press(".addextra input", "Enter")
