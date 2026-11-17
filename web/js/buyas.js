@@ -90,6 +90,8 @@ export function annotate(lines, picks) {
       let t = totals.get(key);
       if (!t) totals.set(key, (t = { entry, g: null, ml: null, n: null, unknown: false }));
       if (ing.q == null && !ing.raw) continue;                 // "salt to taste": nothing to add
+      // "1 can", "2 jars", "1 package": already how it's bought, so the list keeps it as written
+      if (/^(cans?|tins?|jars?|packages?|pkgs?|boxes|box|bags?|bottles?|cartons?|envelopes?|containers?)$/i.test(ing.unit || '')) { t.unknown = true; continue; }
       const m = entry ? measure(ing, entry) : null;
       if (!m) { t.unknown = true; continue; }
       // a total is only kept when every part of the line had it (else it would undercount)

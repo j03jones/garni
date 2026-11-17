@@ -256,30 +256,114 @@ export function fromHtml(html) {
 const looksSchema = (o) => !!findRecipeNodes(o).length;
 
 // ----------------------------------------------------------------------------------------- pasted or plain text
+const DIR_HEAD = /^(?:#+\s*)?(directions?|instructions?|method(?: of preparation)?|steps?|preparation|procedures?|how to make(?: it)?|assembly|notes?)\b[^a-z]*$/i;
+const ING_HEAD = /^(?:#+\s*)?(ingredients?)\b(?:\s*\([^)]*\))?\s*:?$/i;
+// the cells of a table header row ("Ingredient | Amount | Unit"), as pasted from a web page, Word or a PDF
+const NAME_COL = /^(ingredients?|items?|products?|foods?|names?|descriptions?)$/i;
+const AMOUNT_COL = /^(amounts?|quantity|quantities|qty\.?|measures?|measurements?|measuring|weights?|volumes?|units?|uom|us|metric|imperial|portions?|sizes?)$/i;
+const NOTE_COL = /^(notes?|prep(aration)?|comments?|remarks?|how prepared|preparation notes?)$/i;
+const SKIP_COL = /^(costs?|prices?|unit costs?|extensions?|totals?|bakers?\W*%|%|yield %|\$)$/i;
+// recipe books often give one amount per batch size: "Full Recipe | Unit | Half Recipe | Unit | Double Recipe | Unit"
+const UNIT_COL = /^(units?|uom|unit of measure)$/i;
+const BATCH = String.raw`(?:\s+(?:recipe|batch|amount|amt\.?|qty\.?|quantity|yield))?`;
+const MAIN_BATCH_COL = new RegExp(`^(?:full|base|single|original|standard|regular|whole|1\\s*[x×]|[x×]\\s*1|one)${BATCH}$`, 'i');
+const OTHER_BATCH_COL = new RegExp(`^(?:half|double|triple|quadruple|quarter|[2-9]\\s*[x×]|[x×]\\s*[2-9]|½|1/2|two|three)${BATCH}$`, 'i');
+const isHeaderCell = (c) => NAME_COL.test(c) || AMOUNT_COL.test(c) || NOTE_COL.test(c) || SKIP_COL.test(c) || MAIN_BATCH_COL.test(c) || OTHER_BATCH_COL.test(c);
+const isTabbed = (line) => line.includes('\t') || (line.match(/\|/g) || []).length >= 2;
+const cellsOf = (line) => line.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split(/\t+|\s*\|\s*/).map((c) => text(c));
+const isRule = (cells) => cells.every((c) => !c || /^:?-{2,}:?$/.test(c));           // Markdown's |---|---|
+const QTY = /^([\d½⅓⅔¼¾⅛⅜⅝⅞]|(a|an|one|two|three|four|five|six|half|pinch|dash|handful|to taste|as needed)\b)/i;
+const isAmountCell = (c) => QTY.test(c) || canonicalUnit(c.replace(/\.$/, '')) != null;
+
+/** A table header row's columns, or null: { name, amount: [..], note: [..] } (indexes into the row's cells). */
+function headerColumns(cells) {
+  const filled = cells.map((c, n) => [c, n]).filter(([c]) => c);
+  if (filled.length < 2 || !filled.every(([c]) => isHeaderCell(c))) return null;
+  // columns of amounts in groups: an amount column and the Unit column after it. With several batch sizes
+  // (Full / Half / Double) only the main one is read; the app scales recipes itself.
+  const groups = [];
+  const cols = { name: -1, amount: [], note: [] };
+  for (const [c, n] of filled) {
+    if (NAME_COL.test(c) && cols.name < 0) cols.name = n;
+    else if (UNIT_COL.test(c) && groups.length && groups[groups.length - 1].cols.length === 1) groups[groups.length - 1].cols.push(n);
+    else if (MAIN_BATCH_COL.test(c)) groups.push({ main: true, cols: [n] });
+    else if (OTHER_BATCH_COL.test(c)) groups.push({ other: true, cols: [n] });
+    else if (AMOUNT_COL.test(c)) groups.push({ cols: [n] });
+    else if (NOTE_COL.test(c)) cols.note.push(n);
+  }
+  const batches = groups.some((g) => g.main || g.other);
+  const chosen = batches ? [groups.find((g) => g.main) || groups.find((g) => !g.other) || groups[0]].filter(Boolean) : groups;
+  cols.amount = chosen.flatMap((g) => g.cols);
+  return cols.name >= 0 || cols.amount.length ? cols : null;
+}
+
+/** One table row as an ingredient line ("2 cups | flour | sifted" -> "2 cups flour, sifted"). */
+function rowToLine(cells, cols) {
+  let amount = [], name = '', notes = [];
+  if (cols && cols.name >= 0) {
+    amount = cols.amount.map((n) => cells[n]).filter(Boolean);
+    name = cells[cols.name] || '';
+    notes = cols.note.map((n) => cells[n]).filter(Boolean);
+    if (!name) name = cells.find((c, n) => c && !cols.amount.includes(n) && !cols.note.includes(n)) || '';
+  } else {
+    // no header: the cells that read as amounts or units are the amount, the first other cell is the name
+    for (const c of cells.filter(Boolean)) {
+      if (!name && !isAmountCell(c)) name = c;
+      else if (isAmountCell(c) && amount.length < 3) amount.push(c);
+      else notes.push(c);
+    }
+  }
+  amount = amount.filter((c, n) => c.toLowerCase() !== (amount[n - 1] || '').toLowerCase());   // "As needed | As needed"
+  return [amount.join(' '), name].filter(Boolean).join(' ') + (notes.length ? `, ${notes.join(', ')}` : '');
+}
+
+const startsLikeAmount = (line) => /^[\d½⅓⅔¼¾⅛⅜⅝⅞]/.test(line);
+const wordCount = (line) => line.split(/\s+/).filter(Boolean).length;
+/** A numbered step ("1. Heat the oven", "Step 2: Mix") rather than an ingredient ("1 cup flour"). */
+const isNumberedStep = (line) => {
+  const m = /^(?:step\s*\d+\s*[:.)-]?\s*|\d+\s*[.)]\s+)(\S.*)$/i.exec(line);
+  return !!m && wordCount(m[1]) >= 3 && !startsLikeAmount(m[1]) && canonicalUnit(m[1].split(/\s/)[0].replace(/\.$/, '')) == null;
+};
+
 export function fromPlainText(source) {
-  const lines = String(source || '').replace(/\r/g, '').split('\n').map((l) => l.trim());
+  const lines = String(source || '').replace(/\r/g, '').replace(/\f/g, '\n').split('\n').map((l) => l.replace(/^[  ]+|[  ]+$/g, ''));
   const r = blank();
   let i = 0;
-  while (i < lines.length && !lines[i]) i++;
-  r.title = text(lines[i++] || '').replace(/^#+\s*/, '');
+  while (i < lines.length && !lines[i].trim()) i++;
+  r.title = text((lines[i++] || '').replace(/\t+/g, ' ')).replace(/^#+\s*/, '');
   const ingRows = [], dirRows = [];
-  let mode = '';
+  let mode = '', cols = null, sawTable = false;
   for (; i < lines.length; i++) {
-    const line = lines[i];
+    let line = lines[i];
+    if (!line.trim()) continue;
+    if (isTabbed(line)) {
+      const cells = cellsOf(line);
+      if (isRule(cells)) continue;
+      const filled = cells.filter(Boolean);
+      const header = headerColumns(cells);
+      if (header) { cols = header; mode = 'i'; sawTable = true; continue; }
+      if (filled.length === 1) line = filled[0];                    // a row with one cell: a heading or a sentence
+      else if (DIR_HEAD.test(filled[0]) && mode !== 'd' && filled.length <= 2 && !isAmountCell(filled[1] || '')) { mode = 'd'; if (filled[1]) dirRows.push(filled[1]); continue; }
+      else if (mode === 'd' && !cols) { dirRows.push(filled.join(' ')); continue; }
+      else { ingRows.push(rowToLine(cells, cols)); mode = 'i'; sawTable = true; continue; }
+    }
+    line = text(line);
     if (!line) continue;
-    const head = /^(?:#+\s*)?(ingredients?|directions?|instructions?|method|steps?|preparation|notes?)\s*:?$/i.exec(line);
-    if (head) { mode = /^ingredient/i.test(head[1]) ? 'i' : 'd'; continue; }
-    const meta = /^(serves|servings|yield|makes|serving size)\s*:?\s*(.+)$/i.exec(line);
+    if (ING_HEAD.test(line)) { mode = 'i'; continue; }
+    if (DIR_HEAD.test(line)) { mode = 'd'; cols = null; continue; }
+    const meta = /^(serves|servings|yield|makes|serving size|portions?)\s*:?\s*(.+)$/i.exec(line);
     if (meta && !ingRows.length && !dirRows.length) { setYield(r, /^\d+$/.test(meta[2]) ? `${meta[2]} servings` : meta[2]); continue; }
     const cat = /^(categories|category|tags|course)\s*:\s*(.+)$/i.exec(line);
     if (cat) { r.categories.push(...splitCategories(cat[2])); continue; }
     const from = /^(source|from|by|author)\s*:\s*(.+)$/i.exec(line);
     if (from && !ingRows.length && !dirRows.length) { setSource(r, /^https?:/i.test(from[2]) ? '' : from[2], /^https?:/i.test(from[2]) ? from[2] : '', ''); continue; }
+    // the method starts after an ingredient table even without a heading, and at the first numbered step
+    if (mode === 'i' && ingRows.length && (isNumberedStep(line) || (sawTable && !startsLikeAmount(line) && !isGroupHeading(line) && (wordCount(line) >= 4 || /[.!]$/.test(line))))) { mode = 'd'; cols = null; }
     if (mode === 'i') ingRows.push(line);
-    else if (mode === 'd') dirRows.push(line.replace(/^\d+[.)]\s+/, ''));
-    else if (/^[\d½⅓⅔¼¾⅛⅜⅝⅞]/.test(line) && !/^\d+[.)]\s+\D{25,}/.test(line)) ingRows.push(line);
+    else if (mode === 'd') dirRows.push(line.replace(/^(?:step\s*\d+\s*[:.)-]?|\d+[.)])\s*/i, ''));
+    else if (startsLikeAmount(line) && !isNumberedStep(line)) ingRows.push(line);
     else if (isGroupHeading(line) && !dirRows.length) ingRows.push(line);
-    else dirRows.push(line.replace(/^\d+[.)]\s+/, ''));
+    else dirRows.push(line.replace(/^(?:step\s*\d+\s*[:.)-]?|\d+[.)])\s+/i, ''));
   }
   r.ings = ingredientsFromText(ingRows.join('\n'));
   r.dir = dirRows.join('\n');
@@ -287,12 +371,142 @@ export function fromPlainText(source) {
   return r;
 }
 
+// ----------------------------------------------------------------------------------------- several recipes in one
+/** A contents-page line: a name, dot leaders, a page number ("Comeback Sauce…...8", "Crema………. 9"). */
+const TOC_LINE = /^\s*\S.{0,90}?(?:[.…·_]\s*){3,}\s*\d{1,4}\s*$/;
+const SECTION_LINE = /^\f?\s*section:\s*(\S.*)$/i;
+const META_LINE = /^(serves|servings|yield|yields|makes|serving size|portions?|prep(aration)? time|cook(ing)? time|total time|time|category|categories|course|cuisine|source|from|by|author|difficulty|level)\b/i;
+/** An "Ingredients" heading, or an ingredient table's header row: where a recipe's list begins. */
+const startsIngredients = (line) => {
+  if (isTabbed(line)) { const h = headerColumns(cellsOf(line)); return !!h && h.name >= 0; }
+  return ING_HEAD.test(text(line));
+};
+
+/**
+ * Splits text that holds several recipes (a cookbook in Word, a PDF, a long paste) into one text per recipe.
+ * Each recipe is anchored on its "Ingredients" heading (or ingredient table); its title is the nearest short
+ * line above that, skipping yield, time and description lines. Without anchors, page breaks (\f) split it.
+ * Text with one recipe comes back unchanged.
+ */
+export function splitRecipes(source) {
+  // a book's contents pages ("Avocado Cream……… 1") are left out, and "Section: Sauces" lines (from a Word
+  // file's big headings) become the category of each recipe after them
+  const lines = [], sectionOf = [];
+  let section = '';
+  for (const raw of String(source || '').replace(/\r/g, '').split('\n')) {
+    const sm = SECTION_LINE.exec(raw);
+    if (sm) { section = text(sm[1]); if (raw.startsWith('\f')) { lines.push('\f'); sectionOf.push(section); } continue; }
+    if (TOC_LINE.test(raw.replace(/\t+/g, ' '))) continue;
+    lines.push(raw); sectionOf.push(section);
+  }
+  const all = lines.join('\n');
+  const withSection = (piece, at) => {
+    if (!sectionOf[at]) return piece;
+    const [first, ...rest] = piece.split('\n');
+    return [first, `Category: ${sectionOf[at]}`, ...rest].join('\n');
+  };
+  const anchors = lines.map((l, n) => (startsIngredients(l) ? n : -1)).filter((n) => n >= 0);
+  if (anchors.length >= 2) {
+    const starts = [];
+    let floor = 0;
+    for (const a of anchors) {
+      let t = -1;
+      for (let k = a - 1; k >= floor && k >= a - 12; k--) {
+        const l = text(lines[k].replace(/[\t|]+/g, ' ').replace(/\f/g, ''));
+        if (!l || META_LINE.test(l)) continue;
+        if (l.length > 90 || (/[.!]$/.test(l) && wordCount(l) > 5)) continue;          // a description
+        t = k; break;
+      }
+      starts.push(t < 0 ? a : t);
+      floor = a + 1;
+    }
+    const pieces = starts.map((st, n) => withSection(lines.slice(st, starts[n + 1] ?? lines.length).join('\n').replace(/\f/g, '\n').trim(), st));
+    if (pieces.every((p) => p)) return pieces;
+  }
+  const pages = [];
+  let at = 0;
+  for (const page of all.split('\f')) {
+    const first = at + page.split('\n').findIndex((l) => l.trim());
+    if (page.split('\n').filter((l) => l.trim()).length >= 3) pages.push(withSection(page.trim(), Math.max(at, first)));
+    at += page.split('\n').length - 1;
+  }
+  return pages.length >= 2 ? pages : [all.replace(/\f/g, '\n').trim()];
+}
+
+// ----------------------------------------------------------------------------------------- Word (.docx)
+const xmlText = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+  .replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&amp;/g, '&');
+
+/** One Word paragraph's text: runs, tabs, line and page breaks. */
+function paraText(xml) {
+  let out = /<w:pageBreakBefore(?:\s[^>]*)?\/>/.test(xml) && !/<w:pageBreakBefore[^>]*w:val="(?:0|false)"/.test(xml) ? '\f' : '';
+  const re = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br(\s[^>]*)?\/>|<w:cr\/>/g;
+  let m;
+  while ((m = re.exec(xml))) {
+    if (m[1] != null) out += xmlText(m[1]);
+    else if (m[0].startsWith('<w:tab')) out += '\t';
+    else if (/w:type="page"/.test(m[2] || '')) out += '\n\f';
+    else out += '\n';
+  }
+  return out;
+}
+
+/** A paragraph's type size in half-points (the first sized run, or its paragraph mark), 0 when it doesn't say. */
+const sizeOf = (xml) => +((xml.match(/<w:r[\s>][\s\S]*?<w:sz w:val="(\d+)"/) || xml.match(/<w:sz w:val="(\d+)"/) || [])[1] || 0);
+
+/**
+ * The text of a Word document: paragraphs as lines, table rows as tab-separated cells, page and section breaks
+ * as \f. When the document uses two sizes of heading (a book's "Sauces" over each recipe's "Avocado Cream"), the
+ * bigger, rarer one comes out as "Section: Sauces" so each recipe under it can be filed there.
+ */
+export function docxToText(xml) {
+  const body = (xml.match(/<w:body>([\s\S]*)<\/w:body>/) || [, xml])[1];
+  const blocks = [];
+  const re = /<w:tbl>([\s\S]*?)<\/w:tbl>|<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>|<w:p(?:\s[^>]*)?\/>/g;
+  let m;
+  while ((m = re.exec(body))) {
+    if (m[1] != null) {
+      for (const row of m[1].match(/<w:tr[\s>][\s\S]*?<\/w:tr>/g) || []) {
+        const cells = (row.match(/<w:tc[\s>][\s\S]*?<\/w:tc>/g) || [])
+          .map((c) => (c.match(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/g) || []).map((p) => paraText(p).replace(/[\t\n\f]+/g, ' ').trim()).filter(Boolean).join(' '));
+        blocks.push({ text: cells.join('\t') });
+      }
+      blocks.push({ text: '' });
+    } else {
+      const p = m[2] || '';
+      const t = paraText(p);
+      blocks.push({ text: t, size: sizeOf(p), short: !!t.trim() && t.trim().length <= 60 && !/\t/.test(t) });
+      if (/<w:sectPr[\s>]/.test(p)) blocks.push({ text: '\f' });          // the end of a section starts a new page
+    }
+  }
+  // heading sizes: bigger than most of the text; the biggest is a section heading when a smaller heading size
+  // is used more often (the recipe titles)
+  // (text with no size of its own is the document's normal size, counted as 0)
+  const all = new Map(), short = new Map();
+  for (const b of blocks) {
+    if (b.size == null || !b.text.trim()) continue;
+    all.set(b.size, (all.get(b.size) || 0) + b.text.length);
+    if (b.short) short.set(b.size, (short.get(b.size) || 0) + 1);
+  }
+  const normal = [...all].sort((a, b) => b[1] - a[1])[0]?.[0] || 0;
+  const heads = [...short].filter(([sz]) => sz > normal).sort((a, b) => b[0] - a[0]);
+  const section = heads.length >= 2 && heads[0][1] < heads[1][1] ? heads[0][0] : 0;
+  const out = blocks.map((b) => (section && b.short && b.size === section ? `\fSection: ${b.text.trim()}` : b.text));
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+async function docxFile(bytes) {
+  const doc = readZip(bytes).find((e) => e.name === 'word/document.xml');
+  if (!doc) throw new Error('That Word file has no document in it.');
+  return docxToText(dec.decode(await doc.data()));
+}
+
 // ----------------------------------------------------------------------------------------- the front door
 const clean = (r) => ({ ...r, title: text(r.title).slice(0, 300), ings: r.ings.slice(0, 300), dir: r.dir.slice(0, 20000) });
 const usable = (r) => r.title && (r.ings.length || r.dir);
 
 async function fromJsonValue(value, label) {
-  if (value && typeof value === 'object' && value.app === 'recipelib') throw new Error('That is a Garni backup. Restore it in Settings.');
+  if (value && typeof value === 'object' && value.app === 'recipelib') throw new Error('That is a Recipe Library backup. Restore it in Settings.');
   if (looksSchema(value)) return findRecipeNodes(value).map((n) => recipeFromSchema(n, text(n.url || ''), ''));
   const items = Array.isArray(value) ? value : value && typeof value === 'object' ? (Array.isArray(value.recipes) ? value.recipes : Array.isArray(value.items) ? value.items : Array.isArray(value.results) ? value.results : [value]) : [];
   const mapped = items.filter((x) => x && typeof x === 'object' && (x.name || x.title)).map(fromRichRecipe);
@@ -326,7 +540,15 @@ export async function importFile(name, bytes) {
     }
   }
 
-  if (isZip(bytes)) await fromZip(readZip(bytes), 0);
+  const fromText = (t, k) => add(splitRecipes(t).map(fromPlainText), k);
+  if (lower.endsWith('.docx') && isZip(bytes)) fromText(await docxFile(bytes), 'Word');
+  else if (lower.endsWith('.pdf') || dec.decode(bytes.subarray(0, 5)) === '%PDF-') {
+    const { pdfToText } = await import('./pdfread.js');
+    const t = await pdfToText(bytes);
+    if (!t.trim()) throw new Error('No text was found in that PDF. If it is a scan, use Scan a printed recipe on the Add page.');
+    fromText(t, 'PDF');
+  } else if (lower.endsWith('.doc')) throw new Error('That is an older Word file (.doc). In Word, choose File > Save As > Word Document (.docx), then import that.');
+  else if (isZip(bytes)) await fromZip(readZip(bytes), 0);
   else if (lower.endsWith('.cook')) add([fromCooklang(dec.decode(bytes), name)], 'Cooklang');
   else if (lower.endsWith('.json') || lower.endsWith('.jsonld')) add(await fromJsonValue(JSON.parse(dec.decode(bytes)), name), 'JSON');
   else if (/\.html?$/.test(lower)) add(fromHtml(dec.decode(bytes)).map((n) => recipeFromSchema(n, text(n.url || ''), '')), 'web page');
@@ -334,7 +556,7 @@ export async function importFile(name, bytes) {
     const t = dec.decode(bytes);
     if (/^\s*[{[]/.test(t)) { try { add(await fromJsonValue(JSON.parse(t), name), 'JSON'); } catch (err) { if (/backup/.test(err.message)) throw err; } }
     if (!recipes.length && /ld\+json/i.test(t)) add(fromHtml(t).map((n) => recipeFromSchema(n, '', '')), 'web page');
-    if (!recipes.length) add([fromPlainText(t)], 'text');
+    if (!recipes.length) fromText(t, 'text');
   }
   if (!recipes.length) throw new Error(skipped ? 'No recipe in that file had a title and ingredients or directions.' : 'No recipes were found in that file.');
   return { recipes, skipped, kind };

@@ -9,6 +9,8 @@ import * as collections from './collections.js';
 import * as cooklog from './cooklog.js';
 import * as prefs from './prefs.js';
 import { tidyDirections } from './dirtidy.js';
+import { detect as detectAllergens } from './allergens.js';
+import { diffRecipe } from './adminrecipes.js';
 import { dishOf, orderByPopularity, popularity, topDishes } from './popular.js';
 import * as prices from './prices.js';
 import { priceBook, recipeCosting } from './costui.js';
@@ -761,6 +763,17 @@ function viewList(starredOnly = false) {
 /** The amounts a step needs, shown right under it ("1 lb flour · 1 tsp salt"), at the scale on screen. */
 /** An ingredient line as shown: no footnote stars or trailing marks ("Brown sugar*", "Raisins **", "Yeast:"),
  *  and not SHOUTED ("1 cup BUTTER" -> "1 cup butter"). The recipe itself is left as it was written. */
+/** "May contain: Milk / dairy, Eggs" under the ingredients: read from the ingredient names (allergens.js), so it's a
+ *  suggestion. It can't see inside a bought sauce or stock, and says so. */
+function allergenLine(recipe) {
+  const found = detectAllergens(recipe.ings.map((i) => i.item).filter(Boolean));
+  if (!found.length) return null;
+  return h('div', { class: 'allergenline' },
+    h('span', { class: 'muted small' }, 'May contain:'),
+    found.map((a) => h('span', { class: 'label', title: `From: ${a.from.slice(0, 4).join(', ')}` }, a.allergen)),
+    h('span', { class: 'muted small' }, 'Worked out from the ingredient names: check labels on anything bought ready-made.'));
+}
+
 function shownIng(ing) {
   // the name alone decides SHOUTING ("3 oz PEPPERONI": the unit is lower case, the name isn't)
   const item = /[A-Z]{3}/.test(ing.item || '') && !/[a-z]{2}/.test(ing.item || '') ? ing.item.toLowerCase() : ing.item;
@@ -998,7 +1011,8 @@ function viewRecipe(id, preset = null) {
       s.ings.length > 0 && h('h2', null, 'Ingredients'),
       groups.map((g) => [g.name && h('h3', null, g.name),
         h('ul', { class: 'ing' }, g.items.map((i) => h('li', null,
-          tick([h('span', { class: 'box' }, icon('check', { size: 16 })), h('span', { class: 'what' }, amountSplit(shownIng(i)))]))))]));
+          tick([h('span', { class: 'box' }, icon('check', { size: 16 })), h('span', { class: 'what' }, amountSplit(shownIng(i)))]))))]),
+      allergenLine(s));
     fill(dirBox,
       steps.length > 0 && h('h2', null, 'Method'),
       steps.length > 0 && h('button', { class: 'cookbtn', type: 'button', onclick: cookMode }, icon('play', { size: 20 }), 'Start cook mode'),
@@ -1254,10 +1268,48 @@ function viewRecipe(id, preset = null) {
         !shared && h('button', { onclick: saveCopy }, 'Save scaled copy'),
         h('button', { onclick: () => window.print() }, 'Print card')),
       !shared && sharing(r),
+      !shared && historyBox(r),
       r.tags && r.tags.length > 0 && h('p', { class: 'muted small' }, 'Original labels: ', r.tags.join(', '))),
     h('p', { class: 'printfoot' }, 'Garni'));
   paint();
   window.scrollTo(0, 0);
+}
+
+/** A recipe's edit history (recipes kept in the account): what changed and when, with a way back to the version
+ *  before each change. Loaded when opened. From the Jones Ridge app. */
+function historyBox(r) {
+  if (!r.cloud || !lib.me || !r.row) return null;
+  const body = h('div', { class: 'stack' }, h('p', { class: 'muted small' }, 'Loading…'));
+  const box = h('details', { class: 'card historybox' }, h('summary', null, h('strong', null, 'Edit history')), body);
+  box.addEventListener('toggle', async () => {
+    if (!box.open || box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    let versions;
+    try { versions = await cloud.listVersions(r.id); } catch (err) {
+      fill(body, h('p', { class: 'muted small' }, `Could not load the history: ${err.message}`));
+      return;
+    }
+    if (!versions.length) { fill(body, h('p', { class: 'muted small' }, 'No changes since it was saved, or since edit history began.')); return; }
+    const current = { title: r.row.title, categories: r.row.categories || [], body: r.row.body || {} };
+    const WHEN = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    fill(body, h('ol', { class: 'history' }, versions.map((v, i) => {
+      const after = i === 0 ? current : { title: versions[i - 1].title, categories: versions[i - 1].categories, body: versions[i - 1].body };
+      const who = v.replaced_by === lib.me.id ? 'you' : 'someone else';
+      return h('li', null,
+        h('p', { class: 'small' }, h('strong', null, WHEN.format(Date.parse(v.replaced_at))), ` · changed by ${who}`),
+        h('ul', { class: 'small muted' }, diffRecipe(v, after).map((x) => h('li', null, x))),
+        canEdit(r) && h('button', { type: 'button', onclick: async () => {
+          if (!await confirmDialog(`Go back to the version from before this change${v.saved_at ? ` (saved ${WHEN.format(Date.parse(v.saved_at))})` : ''}? The current one is kept in the history, so you can come back to it.`, 'Restore it')) return;
+          try {
+            await cloud.updateRecipe(r.id, { ...v.body, title: v.title, categories: v.categories || [] });
+            await refreshCloud();
+            toast('Restored');
+            route();
+          } catch (err) { toast(err.message, 4500); }
+        } }, 'Restore the version before this'));
+    })), h('p', { class: 'muted small' }, 'The last 30 changes are kept.'));
+  });
+  return box;
 }
 
 /** "Shared with you" strip on a recipe opened from a link. */

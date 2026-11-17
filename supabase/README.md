@@ -188,3 +188,9 @@ puts its own changes since its last sync on top of the latest copy (`merge3` in 
 two people ticking things off at the same time don't undo each other, and phones with the list open check
 for changes every few seconds. Leaving keeps your list on your phone; the last one out removes the
 household. Deleting your account leaves it too. New projects get this from `schema.sql`.
+
+## Edit history
+`add_recipe_versions.sql` (safe to run again; new projects get it from `schema.sql`) keeps the version a recipe
+replaces each time its title, categories or text change: the last 30 per recipe. Whoever can see a recipe can see
+its history (on the recipe page, Edit history), and whoever can edit it can put an earlier version back. Nobody
+writes to the table directly; a trigger on `recipes` does.

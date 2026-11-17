@@ -657,6 +657,12 @@ async def run():
         await page.click("details.nutri > summary")
         check("nutrition shows five figures", await page.locator(".nstats > div").count() == 5)
         check("nutrition says how much it could count", "ingredients" in await page.inner_text("details.nutri") and "not a label" in await page.inner_text("details.nutri"))
+        if await page.locator("details.macros > summary").count():
+            await page.click("details.macros > summary")
+        check("nutrition has a Macronutrients section with % daily value", await page.locator("details.macros .macrobar").count() == 1
+              and "%" in await page.inner_text("details.macros"))
+        allergens = (await page.inner_text(".allergenline")).lower()
+        check("the recipe suggests allergens from its ingredients", "milk / dairy" in allergens and "wheat / gluten" in allergens, allergens)
         check("food cost starts by asking for prices", "Add prices" in await page.inner_text("details.costcard > summary"))
         await page.click("details.costcard > summary")
         await page.fill("input[aria-label='Price of butter']", "4")
@@ -731,6 +737,25 @@ async def run():
         async with page.expect_download() as dl:
             await page.locator("button:has-text('Markdown')").evaluate("e => e.click()")
         check("Markdown export has the ingredients", "## Ingredients" in Path(await (await dl.value).path()).read_text())
+        # from the Jones Ridge app: Word files, several recipes in one, and ingredient tables
+        import zipfile
+        docx = Path(tempfile.mkdtemp()) / "family-recipes.docx"
+        para = lambda t: f'<w:p><w:r><w:t xml:space="preserve">{t}</w:t></w:r></w:p>'
+        body = "".join(para(t) for t in ["Lemon Bars", "Ingredients", "1 cup flour", "1/2 cup butter", "Directions",
+                                          "Bake the crust for 20 minutes.", "", "Corn Muffins", "Ingredients",
+                                          "1 cup cornmeal", "1 egg", "Directions", "Bake for 15 minutes."])
+        with zipfile.ZipFile(docx, "w") as z:
+            z.writestr("[Content_Types].xml", '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>')
+            z.writestr("word/document.xml", '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                       f'<w:body>{body}</w:body></w:document>')
+        await page.set_input_files(".transfer input[type=file]", str(docx))
+        await page.wait_for_selector(".foundlist li:has-text('Corn Muffins')")
+        check("a Word file with two recipes becomes two recipes", await page.locator(".foundlist li:has-text('Lemon Bars')").count() == 1)
+        await page.fill(".transfer textarea", "Pancakes\nIngredient\tAmount\nFlour\t1 cup\nMilk\t3/4 cup\nMix and fry.")
+        await page.click("button:has-text('Read pasted text')")
+        await page.wait_for_selector(".foundlist li:has-text('Pancakes')")
+        check("an ingredient table is read column by column", "2 ingredients" in await page.inner_text(".foundlist li:has-text('Pancakes')")
+              or "Flour" in await page.inner_text(".foundlist"), await page.inner_text(".foundlist"))
         await page.goto(URL + "#/")
 
         # dark mode renders

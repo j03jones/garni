@@ -101,7 +101,7 @@ class NutritionTests(unittest.TestCase):
         self.assertEqual(g["onionMedium"], 110)
         self.assertAlmostEqual(g["pinch"], 0.4)
         self.assertEqual(g["kg"], 1000)
-        self.assertIsNone(g["unknownCan"])          # a can of what size? not guessed
+        self.assertEqual(g["unknownCan"], 425)        # a can that doesn't say its size: a standard 15 oz can
         self.assertIsNone(g["noAmount"])
         self.assertEqual(g["range"], 2.5)           # middle of "2-3"
         self.assertAlmostEqual(g["mlWater"], 236.588, places=2)
@@ -115,8 +115,8 @@ class NutritionTests(unittest.TestCase):
 
     def test_what_cannot_be_counted_is_said(self):
         p = self.js["partial"]
-        self.assertEqual((p["counted"], p["lines"]), (1, 4))          # water is free and left out
-        self.assertEqual(sorted(p["why"]), ["cannot be weighed", "no amount", "unknown food"])
+        self.assertEqual((p["counted"], p["lines"]), (2, 4))          # water is free and left out; the can counts as 15 oz
+        self.assertEqual(sorted(p["why"]), ["no amount", "unknown food"])
         self.assertTrue(p["perIsNull"])                                # no yield, so only totals
 
     def test_costs_in_any_unit(self):

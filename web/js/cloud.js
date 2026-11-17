@@ -394,3 +394,6 @@ export const adminAddToPack = (packId, rows, startSort = 0) => authed('/rest/v1/
   body: rows.map((r, i) => ({ pack_id: packId, title: r.title, categories: r.categories || [], body: r.body, sort: startSort + i })),
 });
 export const adminRemoveFromPack = (id) => authed(`/rest/v1/pack_recipes?id=eq.${enc(id)}`, { method: 'DELETE' });
+
+/** A recipe's earlier versions, newest first (supabase/add_recipe_versions.sql): the last 30 changes. */
+export const listVersions = (recipeId) => authed(`/rest/v1/recipe_versions?recipe_id=eq.${enc(recipeId)}&select=*&order=replaced_at.desc,id.desc`);

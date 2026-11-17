@@ -495,6 +495,24 @@ update public.app_settings set open_signup = true;
 insert into auth.users(email) values ('walkin@x.test');
 select t.expect('open sign-up makes free students', (select role from public.profiles where id=(select id from auth.users where email='walkin@x.test')) = 'student');
 
+-- recipe edit history
+select t.login(:'s1'); set role authenticated;
+insert into public.recipes (owner_id, scope, title, body) values (auth.uid(), 'private', 'History Soup', '{"dir":"Boil."}');
+update public.recipes set body = '{"dir":"Simmer."}' where title = 'History Soup' and owner_id = auth.uid();
+update public.recipes set title = 'History Stew' where title = 'History Soup' and owner_id = auth.uid();
+select t.expect('an edit keeps the version it replaced', t.n($$ select count(*) from public.recipe_versions v join public.recipes r on r.id = v.recipe_id where r.title = 'History Stew' $$) = 2);
+select t.expect('the first kept version is the original text', (select v.body->>'dir' from public.recipe_versions v join public.recipes r on r.id = v.recipe_id where r.title = 'History Stew' order by v.id limit 1) = 'Boil.');
+select t.expect('and says who changed it', (select bool_and(v.replaced_by = auth.uid()) from public.recipe_versions v join public.recipes r on r.id = v.recipe_id where r.title = 'History Stew'));
+update public.recipes set title = 'History Stew' where title = 'History Stew' and owner_id = auth.uid();
+select t.expect('saving without a change keeps nothing new', t.n($$ select count(*) from public.recipe_versions v join public.recipes r on r.id = v.recipe_id where r.title = 'History Stew' $$) = 2);
+select t.denied('people cannot write history directly', $$ insert into public.recipe_versions (recipe_id, title, body) select id, 'x', '{}' from public.recipes where title = 'History Stew' $$);
+reset role;
+select t.login(:'s2'); set role authenticated;
+select t.expect('nobody else sees the history of a private recipe', t.n($$ select count(*) from public.recipe_versions $$) = 0);
+reset role;
+delete from public.recipes where title = 'History Stew';
+select t.expect('deleting a recipe deletes its history', t.n($$ select count(*) from public.recipe_versions where title in ('History Soup', 'History Stew') $$) = 0);
+
 \o
 \echo
 select case when ok then 'PASS' else 'FAIL' end as result, name, case when ok then '' else detail end as detail from t.r order by n;
